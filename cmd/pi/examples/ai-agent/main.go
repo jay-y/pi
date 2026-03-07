@@ -82,8 +82,40 @@ func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
 	return nil
 }
 
+func GetEnvConfig() map[string]any {
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error getting current working directory:", err)
+		return nil
+	}
+	envFile := filepath.Join(cwd, ".env")
+	envJson, err := os.ReadFile(envFile)
+	if err != nil {
+		fmt.Println("Error reading .env file:", err)
+		return nil
+	}
+	var envVars map[string]any
+	err = json.Unmarshal(envJson, &envVars)
+	if err != nil {
+		fmt.Println("Error unmarshalling .env file:", err)
+		return nil
+	}
+	return envVars
+}
+
 func main() {
 	ctx := context.Background()
+
+	envVars := GetEnvConfig()
+	if envVars == nil {
+		fmt.Println("Error getting .env config")
+		return
+	}
+	baseURL, ok := envVars["baseURL"].(string)
+	if !ok {
+		fmt.Println("baseUrl not found in .env file")
+		return
+	}
 
 	ai.RegisterBuiltInApiProviders()
 	ollamaModel := &ai.BaseModel{
@@ -93,7 +125,7 @@ func main() {
 		// Name:          "ollama/qwen3.5:35b",
 		API:           ai.ModelApi(ai.ApiOpenAICompletions),
 		Provider:      ai.ModelProvider("ollama"),
-		BaseURL:       "http://127.0.0.1:11434/v1",
+		BaseURL:       baseURL,
 		Reasoning:     false,
 		Input:         []string{"text"},
 		Cost:          ai.ModelCost{},

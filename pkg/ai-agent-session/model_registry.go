@@ -165,7 +165,7 @@ func NewModelRegistry(authStorage *AuthStorage, modelsJsonPath *string) *ModelRe
 	}
 
 	mr := &ModelRegistry{
-		authStorage:           *authStorage,
+		authStorage:           nil,
 		modelsJsonPath:        *modelsJsonPath,
 		models:                make([]*ai.BaseModel, 0),
 		customProviderApiKeys: make(map[string]string),
@@ -174,6 +174,7 @@ func NewModelRegistry(authStorage *AuthStorage, modelsJsonPath *string) *ModelRe
 
 	// 设置回退解析器
 	if authStorage != nil {
+		mr.authStorage = *authStorage
 		(*authStorage).SetFallbackResolver(func(provider string) *string {
 			if keyConfig, ok := mr.customProviderApiKeys[provider]; ok {
 				resolved := ResolveConfigValue(keyConfig)
@@ -236,21 +237,23 @@ func (mr *ModelRegistry) loadModels() {
 	builtInModels := mr.loadBuiltInModels(overrides, modelOverrides)
 	combined := mr.mergeCustomModels(builtInModels, customModels)
 
-	// 让OAuth提供商修改它们的模型
-	for _, oauthProvider := range mr.authStorage.GetOAuthProviders() {
-		cred := mr.authStorage.Get(oauthProvider.GetID())
-		if cred != nil && cred.Type == "oauth" {
-			// 转换为 Model 切片
-			aiModels := make([]ai.Model, len(combined))
-			for i, m := range combined {
-				aiModels[i] = m
-			}
-			modified := oauthProvider.ModifyModels(aiModels, cred)
-			// 转换回 ai.BaseModel 切片
-			combined = make([]*ai.BaseModel, len(modified))
-			for i, m := range modified {
-				if rm, ok := m.(*ai.BaseModel); ok {
-					combined[i] = rm
+	if mr.authStorage != nil {
+		// 让OAuth提供商修改它们的模型
+		for _, oauthProvider := range mr.authStorage.GetOAuthProviders() {
+			cred := mr.authStorage.Get(oauthProvider.GetID())
+			if cred != nil && cred.Type == "oauth" {
+				// 转换为 Model 切片
+				aiModels := make([]ai.Model, len(combined))
+				for i, m := range combined {
+					aiModels[i] = m
+				}
+				modified := oauthProvider.ModifyModels(aiModels, cred)
+				// 转换回 ai.BaseModel 切片
+				combined = make([]*ai.BaseModel, len(modified))
+				for i, m := range modified {
+					if rm, ok := m.(*ai.BaseModel); ok {
+						combined[i] = rm
+					}
 				}
 			}
 		}

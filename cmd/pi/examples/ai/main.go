@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/jay-y/pi/pkg/ai"
 )
@@ -15,11 +18,38 @@ type Xxx struct {
 	Test Test
 }
 
-// func (t *TestImpl) Exec() {
-// 	fmt.Println("TestImpl Exec")
-// }
+func GetEnvConfig() map[string]any {
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error getting current working directory:", err)
+		return nil
+	}
+	envFile := filepath.Join(cwd, ".env")
+	envJson, err := os.ReadFile(envFile)
+	if err != nil {
+		fmt.Println("Error reading .env file:", err)
+		return nil
+	}
+	var envVars map[string]any
+	err = json.Unmarshal(envJson, &envVars)
+	if err != nil {
+		fmt.Println("Error unmarshalling .env file:", err)
+		return nil
+	}
+	return envVars
+}
 
 func main() {
+	envVars := GetEnvConfig()
+	if envVars == nil {
+		fmt.Println("Error getting .env config")
+		return
+	}
+	baseURL, ok := envVars["baseURL"].(string)
+	if !ok {
+		fmt.Println("baseUrl not found in .env file")
+		return
+	}
 	// 注册内置 API 提供者
 	ai.RegisterBuiltInApiProviders()
 	ollamaModel := &ai.BaseModel{
@@ -29,7 +59,7 @@ func main() {
 		// Name:          "ollama/qwen3.5:122b",
 		API:           ai.ModelApi(ai.ApiOpenAICompletions),
 		Provider:      ai.ModelProvider("ollama"),
-		BaseURL:       "http://127.0.0.1:11434/v1",
+		BaseURL:       baseURL,
 		Reasoning:     false,
 		Input:         []string{"text"},
 		Cost:          ai.ModelCost{},

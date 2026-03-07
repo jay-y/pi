@@ -389,14 +389,14 @@ func (p *OpenAICompletionsProvider) processStream(
 			if completionTokensDetails := chunk.Usage.CompletionTokensDetails; completionTokensDetails != nil {
 				outputTokens = completionTokensDetails.AcceptedPredictionTokens + completionTokensDetails.RejectedPredictionTokens
 			} else {
-				outputTokens = 0
+				// 如果没有 CompletionTokensDetails，直接使用 CompletionTokens
+				outputTokens = chunk.Usage.CompletionTokens
 			}
 			inputTokens := chunk.Usage.PromptTokens - cachedTokens
 			output.Usage.Input = inputTokens
 			output.Usage.Output = outputTokens + reasoningTokens
 			output.Usage.TotalTokens = inputTokens + outputTokens + reasoningTokens
 			output.Usage.CacheRead = cachedTokens
-			output.Usage.TotalTokens = inputTokens + outputTokens + reasoningTokens
 			output.Usage.Cost = calculateCost(model, &output.Usage)
 		}
 

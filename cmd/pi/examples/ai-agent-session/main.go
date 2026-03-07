@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
+	"path/filepath"
 
 	"github.com/jay-y/pi/pkg/ai"
 	agent "github.com/jay-y/pi/pkg/ai-agent"
@@ -135,7 +135,44 @@ func (p *MockFailingProvider) StreamSimple(model ai.Model, context ai.Context, o
 
 var _ ai.ApiProvider = (*MockFailingProvider)(nil)
 
+func GetEnvConfig() map[string]any {
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error getting current working directory:", err)
+		return nil
+	}
+	envFile := filepath.Join(cwd, ".env")
+	envJson, err := os.ReadFile(envFile)
+	if err != nil {
+		fmt.Println("Error reading .env file:", err)
+		return nil
+	}
+	var envVars map[string]any
+	err = json.Unmarshal(envJson, &envVars)
+	if err != nil {
+		fmt.Println("Error unmarshalling .env file:", err)
+		return nil
+	}
+	return envVars
+}
+
 func main() {
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println("Error getting current working directory:", err)
+		return
+	}
+	envVars := GetEnvConfig()
+	if envVars == nil {
+		fmt.Println("Error getting .env config")
+		return
+	}
+	baseURL, ok := envVars["baseURL"].(string)
+	if !ok {
+		fmt.Println("baseUrl not found in .env file")
+		return
+	}
+		
 	ctx := context.Background()
 	ai.RegisterBuiltInApiProviders()
 
@@ -145,7 +182,7 @@ func main() {
 		Name:          "ollama/qwen3-coder-next:q8_0",
 		API:           ai.ModelApi(ai.ApiOpenAICompletions),
 		Provider:      ai.ModelProvider("ollama"),
-		BaseURL:       "http://127.0.0.1:11434/v1",
+		BaseURL:       baseURL,
 		Reasoning:     true,
 		Input:         []string{"text"},
 		Cost:          ai.ModelCost{},
@@ -205,12 +242,6 @@ func main() {
 		},
 	})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		fmt.Println("Error getting current working directory:", err)
-		return
-	}
-
 	al.SetTools(tools.CreateCodingTools(cwd))
 
 	agentSession := session.NewAgentSession(&session.AgentSessionConfig{
@@ -246,47 +277,47 @@ func main() {
 	<-taskDone
 
 	// 等待一下再开始下一个示例
-	time.Sleep(1 * time.Second)
+	// time.Sleep(1 * time.Second)
 
-	// 注册模拟失败的 API 提供者
-	ai.RegisterApiProvider(NewMockFailingProvider(3), "mock-failing")
-	// 使用模拟失败的模型
-	mockFailingModel := &ai.BaseModel{
-		ID:            "mock-failing",
-		Name:          "mock-failing",
-		API:           ai.ModelApi("mock-failing"),
-		APIKey:        "mock-api-key",
-		Provider:      ai.ModelProvider("mock-failing"),
-		Input:         []string{"text"},
-	}
-	al = agent.NewAgent(agent.AgentOptions{
-		InitialState: &agent.AgentState{
-			SystemPrompt: "你是CC，一个全能的AI助手。",
-			Model:        mockFailingModel,
-		},
-	})
-	agentSession.SetAgent(al)
-	agentSession.Dispose()
-	agentSession.ReconnectToAgent()
-	agentSession.Subscribe(listener)
+	// // 注册模拟失败的 API 提供者
+	// ai.RegisterApiProvider(NewMockFailingProvider(3), "mock-failing")
+	// // 使用模拟失败的模型
+	// mockFailingModel := &ai.BaseModel{
+	// 	ID:            "mock-failing",
+	// 	Name:          "mock-failing",
+	// 	API:           ai.ModelApi("mock-failing"),
+	// 	APIKey:        "mock-api-key",
+	// 	Provider:      ai.ModelProvider("mock-failing"),
+	// 	Input:         []string{"text"},
+	// }
+	// al = agent.NewAgent(agent.AgentOptions{
+	// 	InitialState: &agent.AgentState{
+	// 		SystemPrompt: "你是CC，一个全能的AI助手。",
+	// 		Model:        mockFailingModel,
+	// 	},
+	// })
+	// agentSession.SetAgent(al)
+	// agentSession.Dispose()
+	// agentSession.ReconnectToAgent()
+	// agentSession.Subscribe(listener)
 
-	// 示例2：模拟重试场景
-	fmt.Println("\n==================================================")
-	fmt.Println("示例2: 模拟重试场景")
-	fmt.Println("==================================================")
-	fmt.Println("\n注：要测试真实的重试机制，可以：")
-	fmt.Println("1. 暂时断开网络连接")
-	fmt.Println("2. 或者修改代码使用 MockFailingProvider 模拟失败")
-	fmt.Println("3. 或者配置错误的 API 地址触发连接错误")
+	// // 示例2：模拟重试场景
+	// fmt.Println("\n==================================================")
+	// fmt.Println("示例2: 模拟重试场景")
+	// fmt.Println("==================================================")
+	// fmt.Println("\n注：要测试真实的重试机制，可以：")
+	// fmt.Println("1. 暂时断开网络连接")
+	// fmt.Println("2. 或者修改代码使用 MockFailingProvider 模拟失败")
+	// fmt.Println("3. 或者配置错误的 API 地址触发连接错误")
 
-	if err := agentSession.Prompt(ctx, "你好，请简单介绍一下你自己", nil); err != nil {
-		fmt.Println("成功")
-	} else {
-		fmt.Println("失败")
-	}
+	// if err := agentSession.Prompt(ctx, "你好，请简单介绍一下你自己", nil); err != nil {
+	// 	fmt.Println("成功")
+	// } else {
+	// 	fmt.Println("失败")
+	// }
 
-		// 打印当前重试统计
-	fmt.Printf("\n当前重试尝试次数: %d\n", agentSession.GetRetryAttempt())
+	// 	// 打印当前重试统计
+	// fmt.Printf("\n当前重试尝试次数: %d\n", agentSession.GetRetryAttempt())
 
 	// 打印所有消息
 	fmt.Println("\n--- 所有消息记录 ---")

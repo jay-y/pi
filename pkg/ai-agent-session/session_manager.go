@@ -3,6 +3,7 @@ package session
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -485,8 +486,8 @@ func findMostRecentSession(sessionDir string) string {
 // newSessionManager 创建新的会话管理器
 func newSessionManager(cwd, sessionDir, sessionFile string, persist bool) *SessionManager {
 	if persist && sessionDir != "" {
-		if _, err := os.Stat(sessionDir); os.IsNotExist(err) {
-			os.MkdirAll(sessionDir, 0755)
+		if sessionDir, err := EnsureDirExists(sessionDir); err != nil {
+			slog.Error("Failed to ensure session directory exists", "dir", sessionDir, "err", err)
 		}
 	}
 
