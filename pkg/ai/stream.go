@@ -27,6 +27,14 @@ type ProviderStreamOptions struct {
 	Extra map[string]any `json:"-"`
 }
 
+// ThinkingBudgets 思考预算
+type ThinkingBudgets struct {
+	Minimal int `json:"minimal,omitempty"`
+	Low     int `json:"low,omitempty"`
+	Medium  int `json:"medium,omitempty"`
+	High    int `json:"high,omitempty"`
+}
+
 // SimpleStreamOptions 简单流式选项
 type SimpleStreamOptions struct {
 	StreamOptions

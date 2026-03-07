@@ -5,6 +5,13 @@ import (
 	"sync"
 )
 
+// Tool 工具
+type Tool struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Parameters  map[string]any `json:"parameters"`
+}
+
 // Context AI上下文
 type Context struct {
 	SystemPrompt string    `json:"systemPrompt,omitempty"`
