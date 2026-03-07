@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/ai"
 )
 
 // 错误定义

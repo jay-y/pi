@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
-	agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/ai"
+	agent "github.com/jay-y/pi/pkg/ai-agent"
 )
 
 // LsToolInput Ls 工具输入

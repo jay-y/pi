@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
-	agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
-	tools "gitlab.creator94.com/product/pi/pkg/ai-agent-tools"
+	"github.com/jay-y/pi/pkg/ai"
+	agent "github.com/jay-y/pi/pkg/ai-agent"
+	tools "github.com/jay-y/pi/pkg/ai-agent-tools"
 )
 
 func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
@@ -93,7 +93,7 @@ func main() {
 		// Name:          "ollama/qwen3.5:35b",
 		API:           ai.ModelApi(ai.ApiOpenAICompletions),
 		Provider:      ai.ModelProvider("ollama"),
-		BaseURL:       "http://192.168.3.37:11434/v1",
+		BaseURL:       "http://127.0.0.1:11434/v1",
 		Reasoning:     false,
 		Input:         []string{"text"},
 		Cost:          ai.ModelCost{},

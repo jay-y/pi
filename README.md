@@ -128,7 +128,7 @@ SDK 支持多种思考级别，不同模型支持的级别不同：
 提供统一的 LLM 调用接口，支持多个提供者：
 
 ```go
-import "gitlab.creator94.com/product/pi/pkg/ai"
+import "github.com/jay-y/pi/pkg/ai"
 
 // 注册所有内置 API 提供者
 ai.RegisterBuiltInApiProviders()
@@ -200,7 +200,7 @@ for event := range stream.Events() {
 有状态的 Agent，支持工具调用和事件流：
 
 ```go
-import agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
+import agent "github.com/jay-y/pi/pkg/ai-agent"
 
 // 创建 Agent
 ag := agent.NewAgent(agent.AgentOptions{
@@ -253,7 +253,7 @@ ag.FollowUp(ai.NewUserMessage("添加错误处理"))
 完整的会话生命周期管理：
 
 ```go
-import "gitlab.creator94.com/product/pi/pkg/ai-agent-session"
+import "github.com/jay-y/pi/pkg/ai-agent-session"
 
 // 创建 Agent
 agent := agent.NewAgent(agent.AgentOptions{
@@ -317,7 +317,7 @@ agentSession.CycleThinkingLevel()
 提供文件操作、Bash 执行等工具：
 
 ```go
-import "gitlab.creator94.com/product/pi/pkg/ai-agent-tools"
+import "github.com/jay-y/pi/pkg/ai-agent-tools"
 
 cwd, _ := os.Getwd()
 
@@ -354,7 +354,7 @@ allTools := tools.CreateAllTools(cwd)
 ### 安装
 
 ```bash
-go get gitlab.creator94.com/product/pi
+go get github.com/jay-y/pi
 ```
 
 ### 最小示例
@@ -366,7 +366,7 @@ import (
     "context"
     "fmt"
 
-    "gitlab.creator94.com/product/pi/pkg/ai"
+    "github.com/jay-y/pi/pkg/ai"
 )
 
 func main() {
@@ -448,7 +448,7 @@ import (
     "context"
     "fmt"
 
-    "gitlab.creator94.com/product/pi/pkg/ai"
+    "github.com/jay-y/pi/pkg/ai"
 )
 
 func main() {
@@ -461,7 +461,7 @@ func main() {
         Name:          "ollama/qwen3-coder-next:q8_0",
         API:           ai.ModelApi(ai.ApiOpenAICompletions),
         Provider:      ai.ModelProvider("ollama"),
-        BaseURL:       "http://192.168.3.37:11434/v1",
+        BaseURL:       "http://127.0.0.1:11434/v1",
         Reasoning:     false,
         Input:         []string{"text"},
         Cost:          ai.ModelCost{},
@@ -508,9 +508,9 @@ import (
     "fmt"
     "os"
 
-    "gitlab.creator94.com/product/pi/pkg/ai"
-    agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
-    tools "gitlab.creator94.com/product/pi/pkg/ai-agent-tools"
+    "github.com/jay-y/pi/pkg/ai"
+    agent "github.com/jay-y/pi/pkg/ai-agent"
+    tools "github.com/jay-y/pi/pkg/ai-agent-tools"
 )
 
 func main() {
@@ -579,10 +579,10 @@ import (
     "fmt"
     "os"
 
-    "gitlab.creator94.com/product/pi/pkg/ai"
-    agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
-    session "gitlab.creator94.com/product/pi/pkg/ai-agent-session"
-    tools "gitlab.creator94.com/product/pi/pkg/ai-agent-tools"
+    "github.com/jay-y/pi/pkg/ai"
+    agent "github.com/jay-y/pi/pkg/ai-agent"
+    session "github.com/jay-y/pi/pkg/ai-agent-session"
+    tools "github.com/jay-y/pi/pkg/ai-agent-tools"
 )
 
 func main() {
@@ -650,16 +650,16 @@ func main() {
 
 ## 文档
 
-| 文档                                   | 描述                 |
-| ------------------------------------- | -------------------- |
+| 文档                                   | 描述                                            |
+| -------------------------------------- | ----------------------------------------------- |
 | [01-快速开始](docs/01-快速开始.md)     | 最简单的使用方式，包含 LLM 调用、Agent 基础使用 |
-| [02-模型选择](docs/02-模型选择.md)     | 选择模型和思考级别，支持多模型切换 |
-| [03-系统提示词](docs/03-系统提示词.md) | 自定义系统提示词，包括工具提示和上下文 |
-| [04-技能管理](docs/04-技能管理.md)     | 发现、过滤、合并技能 |
-| [05-会话管理](docs/05-会话管理.md)     | 内存会话、持久化会话、会话压缩和重试 |
-| [06-完整控制](docs/06-完整控制.md)     | 完全自定义配置，包括自定义工具和扩展 |
-| [07-工具开发](docs/07-工具开发.md)     | 开发自定义工具，包括参数验证和错误处理 |
-| [08-API参考](docs/08-API参考.md)       | 完整的 API 参考文档 |
+| [02-模型选择](docs/02-模型选择.md)     | 选择模型和思考级别，支持多模型切换              |
+| [03-系统提示词](docs/03-系统提示词.md) | 自定义系统提示词，包括工具提示和上下文          |
+| [04-技能管理](docs/04-技能管理.md)     | 发现、过滤、合并技能                            |
+| [05-会话管理](docs/05-会话管理.md)     | 内存会话、持久化会话、会话压缩和重试            |
+| [06-完整控制](docs/06-完整控制.md)     | 完全自定义配置，包括自定义工具和扩展            |
+| [07-工具开发](docs/07-工具开发.md)     | 开发自定义工具，包括参数验证和错误处理          |
+| [08-API参考](docs/08-API参考.md)       | 完整的 API 参考文档                             |
 
 ## 开发
 
@@ -681,7 +681,7 @@ go run cmd/ai/agent/main.go
 
 # 运行 Session 示例
 go run cmd/ai/agent/session/main.go
-````
+```
 
 ## 常见问题
 
@@ -701,7 +701,7 @@ case *agent.AgentEventToolExecutionEnd:
     if e.IsError {
         fmt.Printf("工具 %s 执行失败: %v\n", e.ToolName, e.Result)
     }
-````
+```
 
 ### 3. 如何限制工具的执行时间？
 
@@ -712,7 +712,7 @@ params := map[string]any{
     "command": "sleep 10",
     "timeout": 5, // 5秒超时
 }
-````
+```
 
 ### 4. 如何处理大文件？
 
@@ -750,7 +750,7 @@ func (t *MyTool) Execute(ctx context.Context, params map[string]any, onUpdate fu
         Content: []ai.ContentBlock{ai.NewTextContentBlock("Result")},
     }, nil
 }
-````
+```
 
 ### 6. 如何调试工具调用？
 
@@ -763,7 +763,7 @@ ag.Subscribe(func(event agent.AgentEvent) {
         fmt.Printf("[DEBUG] 参数: %v\n", e.Args)
     }
 })
-````
+```
 
 ## 开发者指南
 
@@ -788,7 +788,7 @@ ag.Subscribe(func(event agent.AgentEvent) {
 
 ```bash
 make test
-````
+```
 
 ## 许可证
 

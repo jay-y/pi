@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/ai"
 )
 
 // Agent 代理接口

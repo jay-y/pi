@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/ai"
 )
 
 // ProxyAssistantMessageEvent 代理服务返回的助手消息事件

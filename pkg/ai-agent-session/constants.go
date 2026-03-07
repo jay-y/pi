@@ -1,6 +1,6 @@
 package session
 
-import "gitlab.creator94.com/product/pi/pkg/ai"
+import "github.com/jay-y/pi/pkg/ai"
 
 // ModelApi 接口
 type ModelApi = ai.ModelApi

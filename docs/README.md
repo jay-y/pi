@@ -18,7 +18,7 @@
 ### 基础导入
 
 ```go
-import "gitlab.creator94.com/product/pi/pkg/ai-agent/session"
+import "github.com/jay-y/pi/pkg/ai-agent/session"
 ```
 
 ### 最小化使用

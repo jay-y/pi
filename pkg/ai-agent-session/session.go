@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
-	agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/ai"
+	agent "github.com/jay-y/pi/pkg/ai-agent"
 )
 
 // ToolDefinition 工具定义

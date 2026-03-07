@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gitlab.creator94.com/product/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/ai"
 )
 
 const CurrentSessionVersion = 3

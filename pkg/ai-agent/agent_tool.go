@@ -3,7 +3,7 @@ package agent
 import (
 	"context"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/ai"
 )
 
 // AgentToolConfig 工具配置

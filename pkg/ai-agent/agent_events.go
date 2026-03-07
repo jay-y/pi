@@ -1,6 +1,6 @@
 package agent
 
-import "gitlab.creator94.com/product/pi/pkg/ai"
+import "github.com/jay-y/pi/pkg/ai"
 
 // AgentEvent 代理事件
 type AgentEvent interface {

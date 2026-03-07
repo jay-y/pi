@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/ai"
 )
 
 // OpenRouterRouting OpenRouter路由

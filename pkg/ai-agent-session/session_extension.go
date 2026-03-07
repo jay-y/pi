@@ -1,8 +1,8 @@
 package session
 
 import (
-	"gitlab.creator94.com/product/pi/pkg/ai"
-	agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/ai"
+	agent "github.com/jay-y/pi/pkg/ai-agent"
 )
 
 // CommandContext 命令上下文

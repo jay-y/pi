@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
-	agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/ai"
+	agent "github.com/jay-y/pi/pkg/ai-agent"
 )
 
 // GrepToolInput grep 工具的输入参数

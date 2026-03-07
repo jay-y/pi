@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
-	agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/ai"
+	agent "github.com/jay-y/pi/pkg/ai-agent"
 )
 
 // ReadToolInput 读取工具的输入参数

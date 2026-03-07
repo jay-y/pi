@@ -1,7 +1,7 @@
 package tools
 
 import (
-	agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
+	agent "github.com/jay-y/pi/pkg/ai-agent"
 )
 
 // CreateCodingTools 创建编码工具集合

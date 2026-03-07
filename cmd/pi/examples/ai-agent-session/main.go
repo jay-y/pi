@@ -7,10 +7,10 @@ import (
 	"os"
 	"time"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
-	agent "gitlab.creator94.com/product/pi/pkg/ai-agent"
-	session "gitlab.creator94.com/product/pi/pkg/ai-agent-session"
-	tools "gitlab.creator94.com/product/pi/pkg/ai-agent-tools"
+	"github.com/jay-y/pi/pkg/ai"
+	agent "github.com/jay-y/pi/pkg/ai-agent"
+	session "github.com/jay-y/pi/pkg/ai-agent-session"
+	tools "github.com/jay-y/pi/pkg/ai-agent-tools"
 )
 
 // MockFailingProvider 模拟一个会失败的 API 提供者，用于测试重试机制
@@ -145,7 +145,7 @@ func main() {
 		Name:          "ollama/qwen3-coder-next:q8_0",
 		API:           ai.ModelApi(ai.ApiOpenAICompletions),
 		Provider:      ai.ModelProvider("ollama"),
-		BaseURL:       "http://192.168.3.37:11434/v1",
+		BaseURL:       "http://127.0.0.1:11434/v1",
 		Reasoning:     true,
 		Input:         []string{"text"},
 		Cost:          ai.ModelCost{},
@@ -235,7 +235,7 @@ func main() {
 	// 		log.Fatal(err)
 	// 	}
 	// }()
-	// agentSession.FollowUp(ctx, "分析下pkg里的所有文件，然后按实际情况修正完善下/Users/creator/Desktop/Workspace/codes/gitlab.creator94.com/product/pi/README.md的内容", nil)
+	// agentSession.FollowUp(ctx, "分析下pkg里的所有文件，然后按实际情况修正完善下/Users/creator/Desktop/Workspace/codes/github.com/jay-y/pi/README.md的内容", nil)
 	go func() {
 		defer close(taskDone)
 		if err := agentSession.Prompt(ctx, "你好，请简单介绍一下你自己", nil); err != nil {

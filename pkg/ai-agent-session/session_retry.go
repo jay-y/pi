@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.creator94.com/product/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/ai"
 )
 
 // RetryConfig 重试配置

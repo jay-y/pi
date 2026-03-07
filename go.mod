@@ -1,4 +1,4 @@
-module gitlab.creator94.com/product/pi
+module github.com/jay-y/pi
 
 go 1.25
 
