@@ -2,6 +2,8 @@
 
 一个模块化的 AI Agent SDK，提供统一的 LLM API 抽象层、有状态的 Agent 引擎、会话管理和内置工具集。
 
+> 主要学习参考 [pi-mono](https://github.com/badlogic/pi-mono)
+
 ## 特性
 
 - **统一 LLM API** - 支持 OpenAI、Anthropic、Google、Ollama 等多个提供者
