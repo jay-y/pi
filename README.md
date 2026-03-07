@@ -6,7 +6,7 @@
 
 ## 特性
 
-- **统一 LLM API** - 支持 OpenAI、Anthropic、Google、Ollama 等多个提供者
+- **统一 LLM API** - 支持 OpenAI、Anthropic、Google、Ollama 等多个提供者，可自行拓展。
 - **有状态 Agent** - 支持工具调用、事件流、中断控制（Steering/Follow-up）
 - **会话管理** - 内存会话、持久化会话、会话恢复、自动压缩和重试
 - **内置工具** - 文件读写、Bash 执行、代码搜索、文件查找等
@@ -18,69 +18,70 @@
 
 ```
 pi/
-├── cmd/                        # 命令行程序入口
-│   └── ai/
-│       ├── main.go             # 主入口，演示基础 LLM 调用
-│       ├── agent/              # Agent 演示程序
-│       │   ├── main.go         # Agent 核心功能演示（Steering/Follow-up）
-│       │   └── session/        # 会话相关演示
-│       │       └── main.go     # AgentSession 会话管理演示
-│       └── session/            # 会话程序入口
+├── cmd/                            # 命令行程序入口
+│   └── pi/
+│       └── examples/               # 示例程序入口
+│           ├── ai/                 # Agent 演示程序
+│           │   └── main.go         # 演示基础 LLM 调用
+│           ├── ai-agent/           # Agent 演示程序
+│           │   └── main.go         # Agent 核心功能演示（Steering/Follow-up）
+│           └── ai-agent-session/   # 会话程序入口
+│               └── main.go         # AgentSession 会话管理演示
 ├── pkg/
-│   ├── ai/                     # 统一 LLM API 抽象层
+│   ├── ai/                         # 统一 LLM API 抽象层
 │   │   ├── api_provider_openai.go  # OpenAI API 实现
-│   │   ├── api_registry.go     # API 提供者注册表
-│   │   ├── constants.go        # 常量定义（API、Provider、Thinking Level、StopReason等）
-│   │   ├── events.go           # Assistant 消息事件类型定义
-│   │   ├── event_stream.go     # 通用事件流处理
-│   │   ├── messages.go         # 消息类型定义（UserMessage, AssistantMessage, ToolResultMessage）
-│   │   ├── model.go            # 模型接口和实现
-│   │   ├── stream.go           # 流式和非流式调用接口
-│   │   ├── tool_call.go        # 工具调用数据结构
-│   │   ├── types.go            # 通用类型定义（ThinkingBudgets, Cost, Usage等）
-│   │   └── utils.go            # 工具函数（API密钥获取、成本计算等）
-│   ├── ai-agent/               # 有状态 Agent 引擎
-│   │   ├── agent.go            # Agent 核心实现
-│   │   ├── agent_events.go     # Agent 事件类型定义
-│   │   ├── agent_tool.go       # Agent 工具接口定义
-│   │   ├── agent_loop.go       # 代理循环逻辑（Steering/Follow-up处理）
-│   │   ├── constants.go        # Agent 常量定义
-│   │   └── proxy.go            # 代理服务事件转换工具
-│   ├── ai-agent-session/       # 会话管理模块
-│   │   ├── session.go          # AgentSession 核心实现
-│   │   ├── session_events.go   # 会话事件类型定义
-│   │   ├── session_model.go    # 模型切换和思考级别管理
-│   │   ├── session_manager.go  # 会话管理器（持久化/恢复）
-│   │   ├── settings_manager.go # 设置管理器（全局/项目配置）
-│   │   ├── session_prompt.go   # 提示词管理
-│   │   ├── session_tool.go     # 工具扩展管理
-│   │   ├── model_registry.go   # 模型注册表和 API Key 管理
-│   │   ├── resource_loader.go  # 资源加载器
-│   │   ├── utils.go            # 工具函数
-│   │   ├── constants.go        # 会话常量定义
-│   │   ├── session_compaction.go  # 会话压缩
-│   │   └── session_retry.go    # 会话重试机制
-│   └── ai-agent-tools/         # 内置工具集
-│       ├── tools.go            # 工具创建工厂函数
-│       ├── utils.go            # 工具工具函数（文件截断、路径解析等）
-│       ├── tools_read.go       # 文件读取工具（支持图片）
-│       ├── tools_write.go      # 文件写入工具
-│       ├── tools_edit.go       # 文件编辑工具（基于 Diff）
-│       ├── tools_bash.go       # Bash 命令执行工具
-│       ├── tools_grep.go       # 文件内容搜索工具（基于 ripgrep）
-│       ├── tools_find.go       # 文件查找工具
-│       └── tools_ls.go         # 目录列出工具
-├── docs/                       # 详细文档
+│   │   ├── api_registry.go         # API 提供者注册表
+│   │   ├── constants.go            # 常量定义（API、Provider、Thinking Level、StopReason等）
+│   │   ├── events.go               # Assistant 消息事件类型定义
+│   │   ├── event_stream.go         # 通用事件流处理
+│   │   ├── messages.go             # 消息类型定义（UserMessage, AssistantMessage, ToolResultMessage）
+│   │   ├── model.go                # 模型接口和实现
+│   │   ├── stream.go               # 流式和非流式调用接口
+│   │   ├── tool_call.go            # 工具调用数据结构
+│   │   ├── types.go                # 通用类型定义（ThinkingBudgets, Cost, Usage等）
+│   │   └── utils.go                # 工具函数（API密钥获取、成本计算等）
+│   ├── ai-agent/                   # 有状态 Agent 引擎
+│   │   ├── agent.go                # Agent 核心实现
+│   │   ├── agent_events.go         # Agent 事件类型定义
+│   │   ├── agent_tool.go           # Agent 工具接口定义
+│   │   ├── agent_loop.go           # 代理循环逻辑（Steering/Follow-up处理）
+│   │   ├── constants.go            # Agent 常量定义
+│   │   └── proxy.go                # 代理服务事件转换工具
+│   ├── ai-agent-session/           # 会话管理模块
+│   │   ├── session.go              # AgentSession 核心实现
+│   │   ├── session_events.go       # 会话事件类型定义
+│   │   ├── session_model.go        # 模型切换和思考级别管理
+│   │   ├── session_manager.go      # 会话管理器（持久化/恢复）
+│   │   ├── settings_manager.go     # 设置管理器（全局/项目配置）
+│   │   ├── session_prompt.go       # 提示词管理
+│   │   ├── session_tool.go         # 工具扩展管理
+│   │   ├── model_registry.go       # 模型注册表和 API Key 管理
+│   │   ├── resource_loader.go      # 资源加载器
+│   │   ├── utils.go                # 工具函数
+│   │   ├── constants.go            # 会话常量定义
+│   │   ├── session_compaction.go   # 会话压缩
+│   │   └── session_retry.go        # 会话重试机制
+│   └── ai-agent-tools/             # 内置工具集
+│       ├── tools.go                # 工具创建工厂函数
+│       ├── utils.go                # 工具工具函数（文件截断、路径解析等）
+│       ├── tools_read.go           # 文件读取工具（支持图片）
+│       ├── tools_write.go          # 文件写入工具
+│       ├── tools_edit.go           # 文件编辑工具（基于 Diff）
+│       ├── tools_bash.go           # Bash 命令执行工具
+│       ├── tools_grep.go           # 文件内容搜索工具（基于 ripgrep）
+│       ├── tools_find.go           # 文件查找工具
+│       └── tools_ls.go             # 目录列出工具
+├── docs/                           # 详细文档
 │   ├── 01-快速开始.md
 │   ├── 02-模型选择.md
 │   ├── 03-系统提示词.md
 │   ├── 04-技能管理.md
 │   ├── 05-会话管理.md
 │   └── 06-完整控制.md
-├── configs/                    # 配置文件
-├── scripts/                    # 构建脚本
-├── test/                       # 测试数据
-└── pkg/ai-agent-session/       # 会话相关工具和扩展支持
+├── configs/                        # 配置文件
+├── scripts/                        # 构建脚本
+├── test/                           # 测试数据
+└── pkg/ai-agent-session/           # 会话相关工具和扩展支持
 ```
 
 ## 核心概念
@@ -170,7 +171,7 @@ for event := range stream.Events() {
 }
 ```
 
-**支持的提供者**: OpenAI, Azure OpenAI, Anthropic, Google, Vertex AI, Ollama, Mock（模拟）
+**支持的提供者**: OpenAI, Azure OpenAI, Anthropic, Google, Vertex AI, Ollama（可自行拓展）
 
 主要接口：
 
