@@ -588,8 +588,18 @@ func (m *SessionManager) newSession(options *NewSessionOptions) string {
 	m.flushed = false
 
 	if m.persist {
-		fileTimestamp := strings.ReplaceAll(strings.ReplaceAll(timestamp, ":", "-"), ".", "-")
-		m.sessionFile = filepath.Join(m.GetSessionDir(), fmt.Sprintf("%s_%s.jsonl", fileTimestamp, m.sessionID))
+		// 从 RFC3339 格式中提取 yyyymmdd 格式
+		// RFC3339 格式示例: 2026-03-07T21:35:52+08:00
+		// 我们需要提取: 20260307
+		t, err := time.Parse(time.RFC3339, timestamp)
+		if err == nil {
+			fileTimestamp := t.Format("20060102") // yyyymmdd
+			m.sessionFile = filepath.Join(m.GetSessionDir(), fmt.Sprintf("%s_%s.jsonl", fileTimestamp, m.sessionID))
+		} else {
+			// 回退逻辑：如果解析失败，使用原始逻辑
+			fileTimestamp := strings.ReplaceAll(timestamp, ":", "-")[:8]
+			m.sessionFile = filepath.Join(m.GetSessionDir(), fmt.Sprintf("%s_%s.jsonl", fileTimestamp, m.sessionID))
+		}
 	}
 
 	return m.sessionFile
@@ -630,20 +640,28 @@ func (m *SessionManager) _rewriteFile() {
 		return
 	}
 
+	if err := m._writeAllEntries(); err != nil {
+		// 记录错误但不返回
+	}
+}
+
+// _writeAllEntries 写入所有条目
+func (m *SessionManager) _writeAllEntries() error {
+	if m.sessionFile == "" {
+		return fmt.Errorf("no session file specified")
+	}
+
 	var lines []string
 	for _, entry := range m.fileEntries {
 		data, err := json.Marshal(entry)
 		if err != nil {
-			continue
+			return err
 		}
 		lines = append(lines, string(data))
 	}
 
 	content := strings.Join(lines, "\n") + "\n"
-	err := os.WriteFile(m.sessionFile, []byte(content), 0644)
-	if err != nil {
-		// 处理错误
-	}
+	return os.WriteFile(m.sessionFile, []byte(content), 0644)
 }
 
 // _persist 持久化条目
@@ -652,6 +670,7 @@ func (m *SessionManager) _persist(entry SessionEntry) {
 		return
 	}
 
+	// 检查是否已有助手消息
 	hasAssistant := false
 	for _, e := range m.fileEntries {
 		if msgEntry, ok := e.(*SessionMessageEntry); ok {
@@ -662,33 +681,23 @@ func (m *SessionManager) _persist(entry SessionEntry) {
 		}
 	}
 
+	// 如果还没有助手消息
 	if !hasAssistant {
 		// 标记为未刷新，当助手消息到达时写入所有条目
 		m.flushed = false
 		return
 	}
 
+	// 如果尚未刷新，写入所有条目
 	if !m.flushed {
 		// 写入所有条目
-		file, err := os.OpenFile(m.sessionFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
-		if err != nil {
+		if err := m._writeAllEntries(); err != nil {
+			// 记录错误但不返回
 			return
-		}
-		defer file.Close()
-
-		for _, e := range m.fileEntries {
-			data, err := json.Marshal(e)
-			if err != nil {
-				continue
-			}
-			_, err = file.Write([]byte(string(data) + "\n"))
-			if err != nil {
-				// 处理错误
-			}
 		}
 		m.flushed = true
 	} else {
-		// 追加写入单个条目
+		// 已经刷新过 - 追加写入单个条目
 		data, err := json.Marshal(entry)
 		if err != nil {
 			return
@@ -698,9 +707,9 @@ func (m *SessionManager) _persist(entry SessionEntry) {
 			return
 		}
 		defer file.Close()
-		_, err = file.Write([]byte(string(data) + "\n"))
+		_, err = file.WriteString(string(data) + "\n")
 		if err != nil {
-			// 处理错误
+			// 记录错误但不返回
 		}
 	}
 }
@@ -740,25 +749,6 @@ func (m *SessionManager) GetSessionFile() string {
 
 // AppendMessage 添加消息
 func (m *SessionManager) AppendMessage(message ai.Message) string {
-	// 将 Message 转换为 map
-	msgMap := map[string]interface{}{
-		"role": message.GetRole(),
-	}
-	
-	// 尝试获取其他字段
-	if msg, ok := message.(interface{ GetContent() []ai.ContentBlock }); ok {
-		msgMap["content"] = msg.GetContent()
-	}
-	if msg, ok := message.(interface{ GetProvider() string }); ok {
-		msgMap["provider"] = msg.GetProvider()
-	}
-	if msg, ok := message.(interface{ GetModel() string }); ok {
-		msgMap["model"] = msg.GetModel()
-	}
-	if msg, ok := message.(interface{ GetTimestamp() int64 }); ok {
-		msgMap["timestamp"] = msg.GetTimestamp()
-	}
-	
 	entry := &SessionMessageEntry{
 		SessionEntryBase: SessionEntryBase{
 			Type:      "message",
@@ -766,10 +756,19 @@ func (m *SessionManager) AppendMessage(message ai.Message) string {
 			ParentID:  m.leafID,
 			Timestamp: time.Now().Format(time.RFC3339),
 		},
-		Message: msgMap,
+		Message: message.ToMap(),
 	}
 
+	// 添加消息条目
 	m._appendEntry(entry)
+	
+	// 如果是助手消息，确保完全持久化
+	if message.GetRole() == "assistant" {
+		if m.persist && m.sessionFile != "" {
+			m._rewriteFile()
+		}
+	}
+	
 	return entry.ID
 }
 
@@ -1344,8 +1343,8 @@ func (m *SessionManager) CreateBranchedSession(leafID string) string {
 
 	newSessionID := uuid.New().String()
 	timestamp := time.Now().Format(time.RFC3339)
-	fileTimestamp := strings.ReplaceAll(strings.ReplaceAll(timestamp, ":", "-"), ".", "-")
-	newSessionFile := filepath.Join(m.GetSessionDir(), fmt.Sprintf("%s_%s.jsonl", fileTimestamp, newSessionID))
+	
+	newSessionFile := GetSessionFile(m.GetSessionDir(), newSessionID, timestamp)
 
 	header := &SessionHeader{
 		Type:         "session",
@@ -1566,8 +1565,8 @@ func ForkFrom(sourcePath, targetCwd, sessionDir string) *SessionManager {
 	// 创建新会话文件
 	newSessionID := uuid.New().String()
 	timestamp := time.Now().Format(time.RFC3339)
-	fileTimestamp := strings.ReplaceAll(strings.ReplaceAll(timestamp, ":", "-"), ".", "-")
-	newSessionFile := filepath.Join(dir, fmt.Sprintf("%s_%s.jsonl", fileTimestamp, newSessionID))
+	
+	newSessionFile := GetSessionFile(dir, newSessionID, timestamp)
 
 	// 写入新头部
 	newHeader := &SessionHeader{
@@ -1763,4 +1762,17 @@ func getSessionModifiedDate(entries []FileEntry, header *SessionHeader, statsMti
 	}
 
 	return statsMtime
+}
+
+func GetSessionFile(sessionDir, sessionID, timestamp string) string {
+	// 从 RFC3339 格式中提取 yyyymmdd 格式
+	var newSessionFile string
+	t, err := time.Parse(time.RFC3339, timestamp)
+	if err == nil {
+		fileTimestamp := t.Format("20060102") // yyyymmdd
+		newSessionFile = filepath.Join(sessionDir, fmt.Sprintf("%s_%s.jsonl", fileTimestamp, sessionID))
+	} else {
+		newSessionFile = filepath.Join(sessionDir, fmt.Sprintf("%s.jsonl", sessionID))
+	}
+	return newSessionFile
 }

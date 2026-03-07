@@ -66,6 +66,7 @@ func NewImageContentBlock(data, mimeType string) *ImageContentBlock {
 // Message 消息接口
 type Message interface {
 	GetRole() string
+	ToMap() map[string]any
 }
 
 // UserMessage 用户消息
@@ -77,6 +78,14 @@ type UserMessage struct {
 
 func (u *UserMessage) GetRole() string {
 	return u.Role
+}
+
+func (u *UserMessage) ToMap() map[string]any {
+	return map[string]any{
+		"role": u.Role,
+		"content": u.Content,
+		"timestamp": u.Timestamp,
+	}
 }
 
 // NewUserMessage 创建新的用户消息
@@ -105,6 +114,20 @@ func (a *AssistantMessage) GetRole() string {
 	return a.Role
 }
 
+func (a *AssistantMessage) ToMap() map[string]any {
+	return map[string]any{
+		"role": a.Role,
+		"content": a.Content,
+		"api": a.API,
+		"provider": a.Provider,
+		"model": a.Model,
+		"usage": a.Usage,
+		"stopReason": a.StopReason,
+		"errorMessage": a.ErrorMessage,
+		"timestamp": a.Timestamp,
+	}
+}
+
 // NewAssistantMessage 创建新的助手消息
 func NewAssistantMessage(api ModelApi, provider ModelProvider, model string) *AssistantMessage {
 	return &AssistantMessage{
@@ -131,6 +154,18 @@ type ToolResultMessage struct {
 
 func (t *ToolResultMessage) GetRole() string {
 	return t.Role
+}
+
+func (t *ToolResultMessage) ToMap() map[string]any {
+	return map[string]any{
+		"role": t.Role,
+		"toolCallId": t.ToolCallID,
+		"toolName": t.ToolName,
+		"content": t.Content,
+		"details": t.Details,
+		"isError": t.IsError,
+		"timestamp": t.Timestamp,
+	}
 }
 
 // NewToolResultMessage 创建新的工具结果消息

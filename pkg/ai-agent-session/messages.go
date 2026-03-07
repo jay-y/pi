@@ -15,6 +15,18 @@ func (c *CustomMessage) GetRole() string {
 	return c.Role
 }
 
+// ToMap 实现 Message 接口
+func (c *CustomMessage) ToMap() map[string]any {
+	return map[string]any{
+		"role": c.Role,
+		"customType": c.CustomType,
+		"content": c.Content,
+		"display": c.Display,
+		"details": c.Details,
+		"timestamp": c.Timestamp,
+	}
+}
+
 // BashExecutionMessage Bash 执行消息
 type BashExecutionMessage struct {
 	Role               string `json:"role"`
@@ -25,11 +37,27 @@ type BashExecutionMessage struct {
 	Cancelled          bool   `json:"cancelled"`
 	Truncated          bool   `json:"truncated"`
 	FullOutputPath     string `json:"fullOutputPath,omitempty"`
-	Timestamp          int64  `json:"timestamp"`
 	ExcludeFromContext bool   `json:"excludeFromContext,omitempty"`
+	Timestamp          int64  `json:"timestamp"`
 }
 
 // GetRole 实现 Message 接口
 func (m *BashExecutionMessage) GetRole() string {
 	return m.Role
+}
+
+// ToMap 实现 Message 接口
+func (m *BashExecutionMessage) ToMap() map[string]any {
+	return map[string]any{
+		"role": m.Role,
+		"type": m.Type,
+		"command": m.Command,
+		"output": m.Output,
+		"exitCode": m.ExitCode,
+		"cancelled": m.Cancelled,
+		"truncated": m.Truncated,
+		"fullOutputPath": m.FullOutputPath,
+		"excludeFromContext": m.ExcludeFromContext,
+		"timestamp": m.Timestamp,
+	}
 }
