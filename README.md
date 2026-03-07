@@ -781,9 +781,10 @@ ag.Subscribe(func(event agent.AgentEvent) {
 
 ### 代码结构说明
 
-- `pkg/ai-*`: 各功能模块代码
-- `cmd/ai-*`: 命令行程序和示例
+- `cmd/pi/ai-*`: 命令行程序和示例
 - `docs/`: 文档
+- `pkg/ai-*`: 各功能模块代码
+- `scripts/`: 脚本
 - `test/`: 测试数据
 
 ### 运行测试
