@@ -675,8 +675,8 @@ make test
 # 清理
 make clean
 
-# 运行命令行程序
-make run-cli
+# 运行 AI 示例
+go run cmd/ai/main.go
 
 # 运行 Agent 示例
 go run cmd/ai/agent/main.go
