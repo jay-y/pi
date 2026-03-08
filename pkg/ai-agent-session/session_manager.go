@@ -588,18 +588,7 @@ func (m *SessionManager) newSession(options *NewSessionOptions) string {
 	m.flushed = false
 
 	if m.persist {
-		// 从 RFC3339 格式中提取 yyyymmdd 格式
-		// RFC3339 格式示例: 2026-03-07T21:35:52+08:00
-		// 我们需要提取: 20260307
-		t, err := time.Parse(time.RFC3339, timestamp)
-		if err == nil {
-			fileTimestamp := t.Format("20060102") // yyyymmdd
-			m.sessionFile = filepath.Join(m.GetSessionDir(), fmt.Sprintf("%s_%s.jsonl", fileTimestamp, m.sessionID))
-		} else {
-			// 回退逻辑：如果解析失败，使用原始逻辑
-			fileTimestamp := strings.ReplaceAll(timestamp, ":", "-")[:8]
-			m.sessionFile = filepath.Join(m.GetSessionDir(), fmt.Sprintf("%s_%s.jsonl", fileTimestamp, m.sessionID))
-		}
+		m.sessionFile = GetSessionFile(m.GetSessionDir(), m.sessionID, timestamp)
 	}
 
 	return m.sessionFile
