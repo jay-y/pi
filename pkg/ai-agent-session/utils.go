@@ -17,13 +17,13 @@ func GetAgentDir() string {
 	return filepath.Join(home, ".pi")
 }
 
-// ResolvePath 解析路径，支持 ~ 展开（等价于 $HOME）
+// ResolveRelativePath 解析相对路径，支持 ~ 展开（等价于 $HOME）
 // 示例：
 //   ~                -> /Users/creator
 //   ~/pi             -> /Users/creator/pi
 //   ./workspace      -> /current/working/directory/workspace
 //   /absolute/path   -> /absolute/path
-func ResolvePath(path string) (string, error) {
+func ResolveRelativePath(path string) (string, error) {
 	if path == "" {
 		return "", nil
 	}
@@ -55,7 +55,7 @@ func ResolvePath(path string) (string, error) {
 // EnsureDirExists 确保目录存在，若不存在则创建
 // 返回实际目录路径（已做 abs 处理）和错误
 func EnsureDirExists(dir string) (string, error) {
-	resolved, err := ResolvePath(dir)
+	resolved, err := ResolveRelativePath(dir)
 	if err != nil {
 		return "", err
 	}
@@ -68,7 +68,7 @@ func EnsureDirExists(dir string) (string, error) {
 // EnsureFileExists 确保文件存在，若不存在则创建空文件
 // 返回实际文件路径（已做 abs 处理）和错误
 func EnsureFileExists(filePath string) (string, error) {
-	resolved, err := ResolvePath(filePath)
+	resolved, err := ResolveRelativePath(filePath)
 	if err != nil {
 		return "", err
 	}

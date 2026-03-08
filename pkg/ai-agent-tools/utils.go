@@ -156,7 +156,7 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen]
 }
 
-// ResolvePath 解析相对路径
+// ResolvePath 解析路径
 func ResolvePath(path, cwd string) (string, error) {
 	if filepath.IsAbs(path) {
 		return path, nil
