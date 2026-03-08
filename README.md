@@ -47,7 +47,7 @@ pi/
 │   │   ├── agent_loop.go           # 代理循环逻辑（Steering/Follow-up处理）
 │   │   ├── constants.go            # Agent 常量定义
 │   │   └── proxy.go                # 代理服务事件转换工具
-│   ├── ai-agent-session/           # 会话管理模块
+│   ├── ai-agent-session/           # 会话模块
 │   │   ├── session.go              # AgentSession 核心实现
 │   │   ├── session_events.go       # 会话事件类型定义
 │   │   ├── session_model.go        # 模型切换和思考级别管理
@@ -80,8 +80,7 @@ pi/
 │   └── 06-完整控制.md
 ├── configs/                        # 配置文件
 ├── scripts/                        # 构建脚本
-├── test/                           # 测试数据
-└── pkg/ai-agent-session/           # 会话相关工具和扩展支持
+└── test/                           # 测试数据
 ```
 
 ## 核心概念
