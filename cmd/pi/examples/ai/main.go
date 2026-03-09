@@ -76,11 +76,9 @@ func main() {
 	}
 
 	// 流式调用
-	stream, err := ai.Stream(ollamaModel, cxt, &ai.ProviderStreamOptions{
-		StreamOptions: ai.StreamOptions{
-			Ctx: context.Background(),
-			APIKey: "ollama",
-		},
+	stream, err := ai.Stream(ollamaModel, cxt, &ai.StreamOptions{
+		Ctx: context.Background(),
+		APIKey: "ollama",
 	})
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -103,11 +101,9 @@ func main() {
 	}
 
 	// 完整调用（非流式）
-	response, err := ai.Complete(ollamaModel, cxt, &ai.ProviderStreamOptions{
-		StreamOptions: ai.StreamOptions{
-			Ctx: context.Background(),
-			APIKey: "ollama",
-		},
+	response, err := ai.Complete(ollamaModel, cxt, &ai.StreamOptions{
+		Ctx: context.Background(),
+		APIKey: "ollama",
 	})
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)

@@ -74,7 +74,7 @@ func (s *AgentSession) Prompt(ctx context.Context, text string, options *PromptO
 	if err != nil {
 		return err
 	}
-	if apiKey == "" && model.GetProvider() != "ollama" {
+	if apiKey == "" {
 		return fmt.Errorf("No API key found for %s", model.GetProvider())
 	}
 

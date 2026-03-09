@@ -1467,8 +1467,8 @@ func (m *SessionManager) CreateBranchedSession(leafID string) string {
 	return ""
 }
 
-// Create 创建会话管理器
-func Create(cwd, sessionDir string) *SessionManager {
+// CreateSessionManager 创建会话管理器
+func CreateSessionManager(cwd, sessionDir string) *SessionManager {
 	dir := sessionDir
 	if dir == "" {
 		dir = getDefaultSessionDir(cwd)

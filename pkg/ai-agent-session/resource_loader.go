@@ -6,7 +6,14 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"gopkg.in/yaml.v3"
 )
+
+// Frontmatter 前置元数据
+type Frontmatter struct {
+	Description string `yaml:"description"`
+}
 
 // CollisionInfo 碰撞信息
 type CollisionInfo struct {
@@ -566,6 +573,29 @@ func (rl *DefaultResourceLoader) loadPromptsFromDir(dir string, prompts []Prompt
 	return prompts
 }
 
+// normalizeNewlines 标准化换行符
+func normalizeNewlines(value string) string {
+	value = strings.ReplaceAll(value, "\r\n", "\n")
+	value = strings.ReplaceAll(value, "\r", "\n")
+	return value
+}
+
+// extractFrontmatter 提取 frontmatter 和 body
+func extractFrontmatter(content string) (yamlString string, body string) {
+	normalized := normalizeNewlines(content)
+
+	if !strings.HasPrefix(normalized, "---") {
+		return "", normalized
+	}
+
+	endIndex := strings.Index(normalized, "\n---")
+	if endIndex == -1 {
+		return "", normalized
+	}
+
+	return normalized[4:endIndex], strings.TrimSpace(normalized[endIndex+4:])
+}
+
 // loadPromptFromFile 从文件加载提示模板
 func (rl *DefaultResourceLoader) loadPromptFromFile(filePath string) *PromptTemplate {
 	content, err := os.ReadFile(filePath)
@@ -576,23 +606,64 @@ func (rl *DefaultResourceLoader) loadPromptFromFile(filePath string) *PromptTemp
 	name := strings.TrimSuffix(filepath.Base(filePath), ".md")
 	contentStr := string(content)
 
-	// 提取描述（第一行）
-	lines := strings.Split(contentStr, "\n")
-	description := ""
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" && !strings.HasPrefix(line, "#") {
-			description = line
-			break
+	yamlString, body := extractFrontmatter(contentStr)
+
+	var frontmatter *Frontmatter
+	if yamlString != "" {
+		frontmatter = &Frontmatter{}
+		if err := yaml.Unmarshal([]byte(yamlString), frontmatter); err != nil {
+			frontmatter = nil
 		}
+	}
+
+	description := ""
+	if frontmatter != nil && frontmatter.Description != "" {
+		description = frontmatter.Description
+	} else {
+		bodyLines := strings.Split(body, "\n")
+		for _, line := range bodyLines {
+			line = strings.TrimSpace(line)
+			if line != "" && !strings.HasPrefix(line, "#") {
+				description = line
+				break
+			}
+		}
+	}
+
+	if len(description) > 60 {
+		description = description[:60] + "..."
+	}
+
+	source := rl.determineSource(filePath)
+	sourceLabel := ""
+	if source != "" {
+		sourceLabel = fmt.Sprintf(" (%s)", source)
+	}
+
+	if description != "" {
+		description = description + sourceLabel
+	} else {
+		description = sourceLabel
 	}
 
 	return &PromptTemplate{
 		Name:        name,
 		Description: description,
-		Template:    contentStr,
+		Template:    body,
 		FilePath:    filePath,
+		Source:      source,
 	}
+}
+
+// determineSource 确定资源的来源
+func (rl *DefaultResourceLoader) determineSource(filePath string) string {
+	if strings.HasPrefix(filePath, rl.agentDir) {
+		return "user"
+	}
+	if strings.HasPrefix(filePath, rl.cwd) {
+		return "project"
+	}
+	return "path"
 }
 
 // dedupePrompts 去重提示模板

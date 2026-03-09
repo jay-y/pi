@@ -19,11 +19,6 @@ type StreamOptions struct {
 	MaxRetryDelayMs int               `json:"maxRetryDelayMs,omitempty"`
 	Metadata        map[string]any    `json:"metadata,omitempty"`
 	ReasoningEffort string            `json:"reasoningEffort,omitempty"`
-}
-
-// ProviderStreamOptions 提供程序流式选项
-type ProviderStreamOptions struct {
-	StreamOptions
 	Extra map[string]any `json:"-"`
 }
 
@@ -43,14 +38,14 @@ type SimpleStreamOptions struct {
 }
 
 // Stream 流式调用 LLM
-func Stream(model Model, ctx Context, opts *ProviderStreamOptions) (*AssistantMessageEventStream, error) {
+func Stream(model Model, ctx Context, opts *StreamOptions) (*AssistantMessageEventStream, error) {
 	provider, err := ResolveApiProvider(model.GetAPI())
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve provider: %w", err)
 	}
 	streamOpts := &StreamOptions{}
 	if opts != nil {
-		streamOpts = &opts.StreamOptions
+		streamOpts = opts
 	}
 	// 设置上下文超时
 	if streamOpts.Ctx == nil {
@@ -60,7 +55,7 @@ func Stream(model Model, ctx Context, opts *ProviderStreamOptions) (*AssistantMe
 }
 
 // Complete 完成式调用 LLM（非流式）
-func Complete(model Model, ctx Context, opts *ProviderStreamOptions) (*AssistantMessage, error) {
+func Complete(model Model, ctx Context, opts *StreamOptions) (*AssistantMessage, error) {
 	s, err := Stream(model, ctx, opts)
 	if err != nil {
 		return nil, err
