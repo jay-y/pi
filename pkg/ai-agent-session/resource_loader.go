@@ -465,27 +465,49 @@ func (rl *DefaultResourceLoader) loadSkillFromFile(filePath string) *SkillInfo {
 		return nil
 	}
 
-	// 简单解析技能文件
 	name := strings.TrimSuffix(filepath.Base(filePath), ".md")
 	contentStr := string(content)
 
-	// 提取描述（第一行）
-	lines := strings.Split(contentStr, "\n")
-	description := ""
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" && !strings.HasPrefix(line, "#") {
-			description = line
-			break
+	yamlString, body := extractFrontmatter(contentStr)
+
+	var frontmatter *SkillFrontmatter
+	if yamlString != "" {
+		frontmatter = &SkillFrontmatter{}
+		if err := yaml.Unmarshal([]byte(yamlString), frontmatter); err != nil {
+			frontmatter = nil
 		}
 	}
 
+	description := ""
+	if frontmatter != nil && frontmatter.Description != "" {
+		description = frontmatter.Description
+	} else {
+		bodyLines := strings.Split(body, "\n")
+		for _, line := range bodyLines {
+			line = strings.TrimSpace(line)
+			if line != "" && !strings.HasPrefix(line, "#") {
+				description = line
+				break
+			}
+		}
+	}
+
+	if frontmatter != nil && frontmatter.Name != "" {
+		name = frontmatter.Name
+	}
+
+	source := rl.determineSource(filePath)
+	if source == "" {
+		source = "local"
+	}
+
 	return &SkillInfo{
-		Name:        name,
-		Description: description,
-		FilePath:    filePath,
-		BaseDir:     filepath.Dir(filePath),
-		Source:      "local",
+		Name:                   name,
+		Description:            description,
+		FilePath:               filePath,
+		BaseDir:                filepath.Dir(filePath),
+		Source:                 source,
+		DisableModelInvocation: frontmatter != nil && frontmatter.DisableModelInvocation,
 	}
 }
 
