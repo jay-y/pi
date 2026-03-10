@@ -4,11 +4,16 @@ import "github.com/jay-y/pi/pkg/ai"
 
 // AgentEvent 代理事件
 type AgentEvent interface {
+	GetType() AgentEventType
 }
 
 // AgentEventStart 代理开始事件
 type AgentEventStart struct {
 	Type AgentEventType `json:"type"`
+}
+
+func (e *AgentEventStart) GetType() AgentEventType {
+	return e.Type
 }
 
 func NewAgentEventStart() *AgentEventStart {
@@ -23,6 +28,10 @@ type AgentEventEnd struct {
 	Messages []ai.Message   `json:"messages"`
 }
 
+func (e *AgentEventEnd) GetType() AgentEventType {
+	return e.Type
+}
+
 func NewAgentEventEnd(messages []ai.Message) *AgentEventEnd {
 	return &AgentEventEnd{
 		Type:     AgentEventTypeEnd,
@@ -33,6 +42,10 @@ func NewAgentEventEnd(messages []ai.Message) *AgentEventEnd {
 // AgentEventTurnStart 轮次开始事件
 type AgentEventTurnStart struct {
 	Type AgentEventType `json:"type"`
+}
+
+func (e *AgentEventTurnStart) GetType() AgentEventType {
+	return e.Type
 }
 
 func NewAgentEventTurnStart() *AgentEventTurnStart {
@@ -46,6 +59,10 @@ type AgentEventTurnEnd struct {
 	Type        AgentEventType         `json:"type"`
 	Message     ai.Message             `json:"message"`
 	ToolResults []ai.ToolResultMessage `json:"toolResults"`
+}
+
+func (e *AgentEventTurnEnd) GetType() AgentEventType {
+	return e.Type
 }
 
 func NewAgentEventTurnEnd(message ai.Message, toolResults []ai.ToolResultMessage) *AgentEventTurnEnd {
@@ -62,6 +79,10 @@ type AgentEventMessageStart struct {
 	Message ai.Message     `json:"message"`
 }
 
+func (e *AgentEventMessageStart) GetType() AgentEventType {
+	return e.Type
+}
+
 func NewAgentEventMessageStart(message ai.Message) *AgentEventMessageStart {
 	return &AgentEventMessageStart{
 		Type:    AgentEventTypeMessageStart,
@@ -74,6 +95,10 @@ type AgentEventMessageUpdate struct {
 	Type                  AgentEventType           `json:"type"`
 	Message               ai.Message               `json:"message"`
 	AssistantMessageEvent ai.AssistantMessageEvent `json:"assistantMessageEvent"`
+}
+
+func (e *AgentEventMessageUpdate) GetType() AgentEventType {
+	return e.Type
 }
 
 func NewAgentEventMessageUpdate(message ai.Message, assistantMessageEvent ai.AssistantMessageEvent) *AgentEventMessageUpdate {
@@ -90,6 +115,10 @@ type AgentEventMessageEnd struct {
 	Message ai.Message     `json:"message"`
 }
 
+func (e *AgentEventMessageEnd) GetType() AgentEventType {
+	return e.Type
+}
+
 func NewAgentEventMessageEnd(message ai.Message) *AgentEventMessageEnd {
 	return &AgentEventMessageEnd{
 		Type:    AgentEventTypeMessageEnd,
@@ -103,6 +132,10 @@ type AgentEventToolExecutionStart struct {
 	ToolCallID string         `json:"toolCallId"`
 	ToolName   string         `json:"toolName"`
 	Args       any            `json:"args"`
+}
+
+func (e *AgentEventToolExecutionStart) GetType() AgentEventType {
+	return e.Type
 }
 
 func NewAgentEventToolExecutionStart(toolCallID, toolName string, args any) *AgentEventToolExecutionStart {
@@ -123,6 +156,10 @@ type AgentEventToolExecutionUpdate struct {
 	PartialResult any            `json:"partialResult"`
 }
 
+func (e *AgentEventToolExecutionUpdate) GetType() AgentEventType {
+	return e.Type
+}
+
 func NewAgentEventToolExecutionUpdate(toolCallID, toolName string, args, partialResult any) *AgentEventToolExecutionUpdate {
 	return &AgentEventToolExecutionUpdate{
 		Type:          AgentEventTypeToolExecutionUpdate,
@@ -140,6 +177,10 @@ type AgentEventToolExecutionEnd struct {
 	ToolName   string         `json:"toolName"`
 	Result     any            `json:"result"`
 	IsError    bool           `json:"isError"`
+}
+
+func (e *AgentEventToolExecutionEnd) GetType() AgentEventType {
+	return e.Type
 }
 
 func NewAgentEventToolExecutionEnd(toolCallID, toolName string, result any, isError bool) *AgentEventToolExecutionEnd {

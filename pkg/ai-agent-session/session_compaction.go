@@ -139,10 +139,9 @@ func (s *AgentSession) shouldCompact(contextTokens, contextWindow int, settings 
 func (s *AgentSession) runAutoCompaction(reason string, willRetry bool) {
 	settings := s.settingsManager.GetCompactionSettings()
 
-	s.emit(&AutoCompactionStartEvent{
-		Type:   "auto_compaction_start",
-		Reason: reason,
-	})
+	s.emit(NewAutoCompactionStartEvent(
+		reason,
+	))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	s.autoCompactionAbortController = cancel
@@ -155,21 +154,23 @@ func (s *AgentSession) runAutoCompaction(reason string, willRetry bool) {
 	// 检查模型和 API Key
 	model := s.agent.GetState().Model
 	if model == nil {
-		s.emit(&AutoCompactionEndEvent{
-			Type:      "auto_compaction_end",
-			Aborted:   false,
-			WillRetry: false,
-		})
+		s.emit(NewAutoCompactionEndEvent(
+			nil,
+			false,
+			willRetry,
+			ErrNoModelSelected.Message,
+		))
 		return
 	}
 
 	apiKey, err := s.modelRegistry.GetApiKey(model)
 	if err != nil || apiKey == "" {
-		s.emit(&AutoCompactionEndEvent{
-			Type:      "auto_compaction_end",
-			Aborted:   false,
-			WillRetry: false,
-		})
+		s.emit(NewAutoCompactionEndEvent(
+			nil,
+			false,
+			willRetry,
+			ErrNoApiKey.Message,
+		))
 		return
 	}
 
@@ -177,11 +178,12 @@ func (s *AgentSession) runAutoCompaction(reason string, willRetry bool) {
 	pathEntries := s.sessionManager.GetBranch()
 	preparation := s.prepareCompaction(pathEntries, &settings)
 	if preparation == nil {
-		s.emit(&AutoCompactionEndEvent{
-			Type:      "auto_compaction_end",
-			Aborted:   false,
-			WillRetry: false,
-		})
+		s.emit(NewAutoCompactionEndEvent(
+			nil,
+			false,
+			willRetry,
+			ErrNothingToCompact.Message,
+		))
 		return
 	}
 
@@ -194,23 +196,24 @@ func (s *AgentSession) runAutoCompaction(reason string, willRetry bool) {
 		} else {
 			errorMsg = "Auto-compaction failed: " + err.Error()
 		}
-		s.emit(&AutoCompactionEndEvent{
-			Type:         "auto_compaction_end",
-			Aborted:      false,
-			WillRetry:    false,
-			ErrorMessage: errorMsg,
-		})
+		s.emit(NewAutoCompactionEndEvent(
+			nil,
+			false,
+			willRetry,
+			errorMsg,
+		))
 		return
 	}
 
 	// 检查是否被中止
 	select {
 	case <-ctx.Done():
-		s.emit(&AutoCompactionEndEvent{
-			Type:      "auto_compaction_end",
-			Aborted:   true,
-			WillRetry: false,
-		})
+		s.emit(NewAutoCompactionEndEvent(
+			nil,
+			true,
+			willRetry,
+			ErrCompactionCancelled.Message,
+		))
 		return
 	default:
 	}
@@ -228,12 +231,12 @@ func (s *AgentSession) runAutoCompaction(reason string, willRetry bool) {
 	sessionContext := s.sessionManager.BuildSessionContext()
 	s.agent.ReplaceMessages(sessionContext.Messages)
 
-	s.emit(&AutoCompactionEndEvent{
-		Type:      "auto_compaction_end",
-		Result:    result,
-		Aborted:   false,
-		WillRetry: willRetry,
-	})
+	s.emit(NewAutoCompactionEndEvent(
+		result,
+		false,
+		false,
+		"",
+	))
 
 	// 如果需要重试，触发继续
 	if willRetry {

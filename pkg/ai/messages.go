@@ -2,6 +2,7 @@ package ai
 
 // ContentBlock 内容块接口
 type ContentBlock interface {
+	GetType() ContentBlockType
 }
 
 // TextContent 文本内容块
@@ -9,6 +10,10 @@ type TextContentBlock struct {
 	Type          ContentBlockType `json:"type"`
 	Text          string           `json:"text"`
 	TextSignature string           `json:"textSignature,omitempty"`
+}
+
+func (c *TextContentBlock) GetType() ContentBlockType {
+	return c.Type
 }
 
 // NewTextContent 创建新的文本内容块
@@ -27,6 +32,10 @@ type ThinkingContentBlock struct {
 	Redacted          bool             `json:"redacted,omitempty"`
 }
 
+func (c *ThinkingContentBlock) GetType() ContentBlockType {
+	return c.Type
+}
+
 // NewThinkingContent 创建新的思考内容块
 func NewThinkingContentBlock(thinking string, signature string) *ThinkingContentBlock {
 	return &ThinkingContentBlock{
@@ -41,6 +50,10 @@ type ImageContentBlock struct {
 	Type     ContentBlockType `json:"type"`
 	Data     string           `json:"data"`     // base64 编码的图片数据
 	MimeType string           `json:"mimeType"` // 例如 "image/jpeg", "image/png"
+}
+
+func (c *ImageContentBlock) GetType() ContentBlockType {
+	return c.Type
 }
 
 // NewImageContent 创建新的图片内容块
@@ -59,6 +72,10 @@ type ToolCallContentBlock struct {
 	Name             string           `json:"name"`
 	Arguments        any              `json:"arguments"`
 	ThoughtSignature *string          `json:"thoughtSignature,omitempty"`
+}
+
+func (c *ToolCallContentBlock) GetType() ContentBlockType {
+	return c.Type
 }
 
 // NewToolCallContentBlock 创建新的工具调用内容块

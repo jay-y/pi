@@ -411,7 +411,7 @@ func (p *OpenAICompletionsProvider) processStream(
 
 		// 处理内容增量
 		if choice.Delta.Content != "" {
-			if block, ok := currentBlock.(*TextContentBlock); block == nil || ok && block.Type != ContentBlockTypeText {
+			if currentBlock == nil || currentBlock.GetType() != ContentBlockTypeText {
 				// 结束当前块
 				if currentBlock != nil {
 					p.finishBlock(stream, currentBlock, len(blocks)-1, output)
@@ -457,7 +457,7 @@ func (p *OpenAICompletionsProvider) processStream(
 
 		// 处理思考内容
 		if foundReasoningField != nil {
-			if block, ok := currentBlock.(*ThinkingContentBlock); block == nil || ok && block.Type != ContentBlockTypeThinking {
+			if currentBlock == nil || currentBlock.GetType() != ContentBlockTypeThinking {
 				if currentBlock != nil {
 					p.finishBlock(stream, currentBlock, len(blocks)-1, output)
 				}
@@ -486,7 +486,7 @@ func (p *OpenAICompletionsProvider) processStream(
 
 		// 处理工具调用
 		for _, tCall := range choice.Delta.ToolCalls {
-			if block, ok := currentBlock.(*ToolCallContentBlock); block == nil || ok && block.Type != ContentBlockTypeToolCall {
+			if currentBlock == nil || currentBlock.GetType() != ContentBlockTypeToolCall {
 				if currentBlock != nil {
 					p.finishBlock(stream, currentBlock, len(blocks)-1, output)
 				}

@@ -1,7 +1,6 @@
 package session
 
 import (
-	"github.com/jay-y/pi/pkg/ai"
 	agent "github.com/jay-y/pi/pkg/ai-agent"
 )
 
@@ -12,38 +11,65 @@ type AgentSessionEvent interface {
 
 // AutoCompactionStartEvent 自动压缩开始事件
 type AutoCompactionStartEvent struct {
-	Type   string `json:"type"`
-	Reason string `json:"reason"` // "threshold" | "overflow"
+	Type   agent.AgentEventType `json:"type"`
+	Reason string               `json:"reason"` // "threshold" | "overflow"
 }
 
-func (e *AutoCompactionStartEvent) GetType() string {
+func (e *AutoCompactionStartEvent) GetType() agent.AgentEventType {
 	return e.Type
+}
+
+func NewAutoCompactionStartEvent(reason string) *AutoCompactionStartEvent {
+	return &AutoCompactionStartEvent{
+		Type:   AgentEventTypeAutoCompactionStart,
+		Reason: reason,
+	}
 }
 
 // AutoCompactionEndEvent 自动压缩结束事件
 type AutoCompactionEndEvent struct {
-	Type         string            `json:"type"`
-	Result       *CompactionResult `json:"result,omitempty"`
-	Aborted      bool              `json:"aborted"`
-	WillRetry    bool              `json:"willRetry"`
-	ErrorMessage string            `json:"errorMessage,omitempty"`
+	Type         agent.AgentEventType `json:"type"`
+	Result       *CompactionResult    `json:"result,omitempty"`
+	Aborted      bool                 `json:"aborted"`
+	WillRetry    bool                 `json:"willRetry"`
+	ErrorMessage string               `json:"errorMessage,omitempty"`
 }
 
-func (e *AutoCompactionEndEvent) GetType() string {
+func (e *AutoCompactionEndEvent) GetType() agent.AgentEventType {
 	return e.Type
+}
+
+func NewAutoCompactionEndEvent(result *CompactionResult, aborted bool, willRetry bool, errorMessage string) *AutoCompactionEndEvent {
+	return &AutoCompactionEndEvent{
+		Type:         AgentEventTypeAutoCompactionEnd,
+		Result:       result,
+		Aborted:      aborted,
+		WillRetry:    willRetry,
+		ErrorMessage: errorMessage,
+	}
 }
 
 // AutoRetryStartEvent 自动重试开始事件
 type AutoRetryStartEvent struct {
-	Type         string `json:"type"`
-	Attempt      int    `json:"attempt"`
-	MaxAttempts  int    `json:"maxAttempts"`
-	DelayMs      int    `json:"delayMs"`
-	ErrorMessage string `json:"errorMessage"`
+	Type         agent.AgentEventType `json:"type"`
+	Attempt      int                  `json:"attempt"`
+	MaxAttempts  int                  `json:"maxAttempts"`
+	DelayMs      int                  `json:"delayMs"`
+	ErrorMessage string               `json:"errorMessage"`
 }
 
-func (e *AutoRetryStartEvent) GetType() string {
+func (e *AutoRetryStartEvent) GetType() agent.AgentEventType {
 	return e.Type
+}
+
+func NewAutoRetryStartEvent(attempt int, maxAttempts int, delayMs int, errorMessage string) *AutoRetryStartEvent {
+	return &AutoRetryStartEvent{
+		Type:         AgentEventTypeAutoRetryStart,
+		Attempt:      attempt,
+		MaxAttempts:  maxAttempts,
+		DelayMs:      delayMs,
+		ErrorMessage: errorMessage,
+	}
 }
 
 // AutoRetryEndEvent 自动重试结束事件
@@ -52,6 +78,10 @@ type AutoRetryEndEvent struct {
 	Success    bool                 `json:"success"`
 	Attempt    int                  `json:"attempt"`
 	FinalError string               `json:"finalError,omitempty"`
+}
+
+func (e *AutoRetryEndEvent) GetType() agent.AgentEventType {
+	return e.Type
 }
 
 func NewAutoRetryEndEvent(success bool, attempt int, finalError string) *AutoRetryEndEvent {
@@ -70,6 +100,10 @@ type SessionSwitchEvent struct {
 	PreviousSessionFile string               `json:"previousSessionFile,omitempty"`
 }
 
+func (e *SessionSwitchEvent) GetType() agent.AgentEventType {
+	return e.Type
+}
+
 func NewSessionSwitchEvent(reason SessionSwitchReason, previousSessionFile string) *SessionSwitchEvent {
 	return &SessionSwitchEvent{
 		Type:                AgentEventTypeSessionSwitch,
@@ -78,18 +112,56 @@ func NewSessionSwitchEvent(reason SessionSwitchReason, previousSessionFile strin
 	}
 }
 
-// ModelSelectEvent 模型选择事件
-type ModelSelectEvent struct {
-	Type          agent.AgentEventType `json:"type"`
-	Model         ai.Model             `json:"model"`
-	PreviousModel ai.Model             `json:"previousModel,omitempty"`
-	Source        string               `json:"source"` // "set" | "cycle" | "restore"
-}
+// // ModelSelectEvent 模型选择事件
+// type ModelSelectEvent struct {
+// 	Type          agent.AgentEventType `json:"type"`
+// 	Model         ai.Model             `json:"model"`
+// 	PreviousModel ai.Model             `json:"previousModel,omitempty"`
+// 	Source        string               `json:"source"` // "set" | "cycle" | "restore"
+// }
 
-// SessionStartEvent 会话开始事件
-type SessionStartEvent struct {
-	Type agent.AgentEventType `json:"type"`
-}
+// func (e *ModelSelectEvent) GetType() agent.AgentEventType {
+// 	return e.Type
+// }
+
+// func NewModelSelectEvent(model ai.Model, previousModel ai.Model, source string) *ModelSelectEvent {
+// 	return &ModelSelectEvent{
+// 		Type:          AgentEventTypeModelSelect,
+// 		Model:         model,
+// 		PreviousModel: previousModel,
+// 		Source:        source,
+// 	}
+// }
+
+// // SessionStartEvent 会话开始事件
+// type SessionStartEvent struct {
+// 	Type agent.AgentEventType `json:"type"`
+// }
+
+// func (e *SessionStartEvent) GetType() agent.AgentEventType {
+// 	return e.Type
+// }
+
+// func NewSessionStartEvent() *SessionStartEvent {
+// 	return &SessionStartEvent{
+// 		Type: AgentEventTypeSessionStart,
+// 	}
+// }
+
+// // SessionEndEvent 会话结束事件
+// type SessionEndEvent struct {
+// 	Type agent.AgentEventType `json:"type"`
+// }
+
+// func (e *SessionEndEvent) GetType() agent.AgentEventType {
+// 	return e.Type
+// }
+
+// func NewSessionEndEvent() *SessionEndEvent {
+// 	return &SessionEndEvent{
+// 		Type: AgentEventTypeSessionEnd,
+// 	}
+// }
 
 // SessionBeforeSwitchResult 会话切换前结果
 type SessionBeforeSwitchResult struct {

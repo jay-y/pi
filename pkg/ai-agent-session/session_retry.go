@@ -75,12 +75,11 @@ func (s *AgentSession) handleRetryableError(msg *ai.AssistantMessage) bool {
 	// 检查是否超过最大重试次数
 	if s.retryAttempt > config.MaxAttempts {
 		// 达到最大重试次数，重置并重试 Promise
-		s.emit(&AutoRetryEndEvent{
-			Type:       "auto_retry_end",
-			Success:    false,
-			Attempt:    s.retryAttempt - 1,
-			FinalError: msg.ErrorMessage,
-		})
+		s.emit(NewAutoRetryEndEvent(
+			false,
+			s.retryAttempt-1,
+			msg.ErrorMessage,
+		))
 		s.retryAttempt = 0
 		s.resolveRetry()
 		return false
@@ -89,13 +88,12 @@ func (s *AgentSession) handleRetryableError(msg *ai.AssistantMessage) bool {
 	// 计算延迟（指数退避）
 	delayMs := calculateBackoffDelay(s.retryAttempt, config)
 
-	s.emit(&AutoRetryStartEvent{
-		Type:         "auto_retry_start",
-		Attempt:      s.retryAttempt,
-		MaxAttempts:  config.MaxAttempts,
-		DelayMs:      delayMs,
-		ErrorMessage: msg.ErrorMessage,
-	})
+	s.emit(NewAutoRetryStartEvent(
+		s.retryAttempt,
+		config.MaxAttempts,
+		delayMs,
+		msg.ErrorMessage,
+	))
 
 	// 从 agent state 中移除错误消息
 	messages := s.agent.GetState().Messages
@@ -117,12 +115,11 @@ func (s *AgentSession) handleRetryableError(msg *ai.AssistantMessage) bool {
 			attempt := s.retryAttempt
 			s.retryAttempt = 0
 			s.retryAbortController = nil
-			s.emit(&AutoRetryEndEvent{
-				Type:       "auto_retry_end",
-				Success:    false,
-				Attempt:    attempt,
-				FinalError: "Retry cancelled",
-			})
+			s.emit(NewAutoRetryEndEvent(
+				false,
+				attempt-1,
+				"Retry cancelled",
+			))
 			s.resolveRetry()
 			return
 		case <-time.After(time.Duration(delayMs) * time.Millisecond):

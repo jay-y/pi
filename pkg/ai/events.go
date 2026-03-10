@@ -2,12 +2,17 @@ package ai
 
 // AssistantMessageEvent 助手消息事件接口
 type AssistantMessageEvent interface {
+	GetType() AssistantMessageEventType
 }
 
 // AssistantMessageEventStart 开始事件
 type AssistantMessageEventStart struct {
 	Type    AssistantMessageEventType `json:"type"`
 	Partial *AssistantMessage         `json:"partial"`
+}
+
+func (e *AssistantMessageEventStart) GetType() AssistantMessageEventType {
+	return e.Type
 }
 
 func NewAssistantMessageEventStart(partial *AssistantMessage) *AssistantMessageEventStart {
@@ -22,6 +27,10 @@ type AssistantMessageEventTextStart struct {
 	Type         AssistantMessageEventType `json:"type"`
 	ContentIndex int                       `json:"contentIndex"`
 	Partial      *AssistantMessage         `json:"partial"`
+}
+
+func (e *AssistantMessageEventTextStart) GetType() AssistantMessageEventType {
+	return e.Type
 }
 
 func NewAssistantMessageEventTextStart(contentIndex int, partial *AssistantMessage) *AssistantMessageEventTextStart {
@@ -40,6 +49,10 @@ type AssistantMessageEventTextDelta struct {
 	Partial      *AssistantMessage         `json:"partial"`
 }
 
+func (e *AssistantMessageEventTextDelta) GetType() AssistantMessageEventType {
+	return e.Type
+}
+
 func NewAssistantMessageEventTextDelta(contentIndex int, delta string, partial *AssistantMessage) *AssistantMessageEventTextDelta {
 	return &AssistantMessageEventTextDelta{
 		Type:         AssistantMessageEventTypeTextDelta,
@@ -55,6 +68,10 @@ type AssistantMessageEventTextEnd struct {
 	ContentIndex int                       `json:"contentIndex"`
 	Content      string                    `json:"content"`
 	Partial      *AssistantMessage         `json:"partial"`
+}
+
+func (e *AssistantMessageEventTextEnd) GetType() AssistantMessageEventType {
+	return e.Type
 }
 
 func NewAssistantMessageEventTextEnd(contentIndex int, content string, partial *AssistantMessage) *AssistantMessageEventTextEnd {
@@ -93,6 +110,10 @@ type AssistantMessageEventThinkingDelta struct {
 	Partial      *AssistantMessage         `json:"partial"`
 }
 
+func (e *AssistantMessageEventThinkingDelta) GetType() AssistantMessageEventType {
+	return e.Type
+}
+
 func NewAssistantMessageEventThinkingDelta(contentIndex int, delta string, partial *AssistantMessage) *AssistantMessageEventThinkingDelta {
 	return &AssistantMessageEventThinkingDelta{
 		Type:         AssistantMessageEventTypeThinkingDelta,
@@ -108,6 +129,10 @@ type AssistantMessageEventThinkingEnd struct {
 	ContentIndex int                       `json:"contentIndex"`
 	Content      string                    `json:"content"`
 	Partial      *AssistantMessage         `json:"partial"`
+}
+
+func (e *AssistantMessageEventThinkingEnd) GetType() AssistantMessageEventType {
+	return e.Type
 }
 
 func NewAssistantMessageEventThinkingEnd(contentIndex int, content string, partial *AssistantMessage) *AssistantMessageEventThinkingEnd {
@@ -126,6 +151,10 @@ type AssistantMessageEventToolCallStart struct {
 	Partial      *AssistantMessage         `json:"partial"`
 }
 
+func (e *AssistantMessageEventToolCallStart) GetType() AssistantMessageEventType {
+	return e.Type
+}
+
 func NewAssistantMessageEventToolCallStart(contentIndex int, partial *AssistantMessage) *AssistantMessageEventToolCallStart {
 	return &AssistantMessageEventToolCallStart{
 		Type:         AssistantMessageEventTypeToolCallStart,
@@ -140,6 +169,10 @@ type AssistantMessageEventToolCallDelta struct {
 	ContentIndex int                       `json:"contentIndex"`
 	Delta        string                    `json:"delta"`
 	Partial      *AssistantMessage         `json:"partial"`
+}
+
+func (e *AssistantMessageEventToolCallDelta) GetType() AssistantMessageEventType {
+	return e.Type
 }
 
 func NewAssistantMessageEventToolCallDelta(contentIndex int, delta string, partial *AssistantMessage) *AssistantMessageEventToolCallDelta {
@@ -159,6 +192,10 @@ type AssistantMessageEventToolCallEnd struct {
 	Partial      *AssistantMessage         `json:"partial"`
 }
 
+func (e *AssistantMessageEventToolCallEnd) GetType() AssistantMessageEventType {
+	return e.Type
+}
+
 func NewAssistantMessageEventToolCallEnd(contentIndex int, toolCall *ToolCallContentBlock, partial *AssistantMessage) *AssistantMessageEventToolCallEnd {
 	return &AssistantMessageEventToolCallEnd{
 		Type:         AssistantMessageEventTypeToolCallEnd,
@@ -175,6 +212,10 @@ type AssistantMessageEventDone struct {
 	Message *AssistantMessage         `json:"message"`
 }
 
+func (e *AssistantMessageEventDone) GetType() AssistantMessageEventType {
+	return e.Type
+}
+
 func NewAssistantMessageEventDone(reason StopReason, message *AssistantMessage) *AssistantMessageEventDone {
 	return &AssistantMessageEventDone{
 		Type:    AssistantMessageEventTypeDone,
@@ -188,6 +229,10 @@ type AssistantMessageEventError struct {
 	Type   AssistantMessageEventType `json:"type"`
 	Reason StopReason                `json:"reason"`
 	Error  *AssistantMessage         `json:"error"`
+}
+
+func (e *AssistantMessageEventError) GetType() AssistantMessageEventType {
+	return e.Type
 }
 
 func NewAssistantMessageEventError(reason StopReason, error *AssistantMessage) *AssistantMessageEventError {
