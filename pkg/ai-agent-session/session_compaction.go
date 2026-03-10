@@ -50,7 +50,7 @@ func (s *AgentSession) checkCompaction(assistantMessage *ai.AssistantMessage, sk
 	}
 
 	// 跳过被中止的消息（用户取消）
-	if skipAbortedCheck && assistantMessage.StopReason == StopReasonAborted {
+	if skipAbortedCheck && assistantMessage.StopReason == ai.StopReasonStop {
 		return
 	}
 
@@ -65,7 +65,7 @@ func (s *AgentSession) checkCompaction(assistantMessage *ai.AssistantMessage, sk
 		messages := s.agent.GetState().Messages
 		if len(messages) > 0 {
 			if lastMsg, ok := messages[len(messages)-1].(*ai.AssistantMessage); ok {
-				if lastMsg.StopReason == StopReasonError {
+				if lastMsg.StopReason == ai.StopReasonError {
 					s.agent.ReplaceMessages(messages[:len(messages)-1])
 				}
 			}
@@ -75,7 +75,7 @@ func (s *AgentSession) checkCompaction(assistantMessage *ai.AssistantMessage, sk
 	}
 
 	// 检查阈值
-	if assistantMessage.StopReason == StopReasonError {
+	if assistantMessage.StopReason == ai.StopReasonError {
 		return
 	}
 
@@ -87,7 +87,7 @@ func (s *AgentSession) checkCompaction(assistantMessage *ai.AssistantMessage, sk
 
 // isContextOverflow 检查是否是上下文溢出
 func (s *AgentSession) isContextOverflow(msg *ai.AssistantMessage, contextWindow int) bool {
-	if msg.StopReason != StopReasonError {
+	if msg.StopReason != ai.StopReasonError {
 		return false
 	}
 
@@ -241,7 +241,7 @@ func (s *AgentSession) runAutoCompaction(reason string, willRetry bool) {
 			messages := s.agent.GetState().Messages
 			if len(messages) > 0 {
 				if lastMsg, ok := messages[len(messages)-1].(*ai.AssistantMessage); ok {
-					if lastMsg.StopReason == StopReasonError {
+					if lastMsg.StopReason == ai.StopReasonError {
 						s.agent.ReplaceMessages(messages[:len(messages)-1])
 					}
 				}

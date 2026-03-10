@@ -48,46 +48,47 @@ func (e *AutoRetryStartEvent) GetType() string {
 
 // AutoRetryEndEvent 自动重试结束事件
 type AutoRetryEndEvent struct {
-	Type       string `json:"type"`
-	Success    bool   `json:"success"`
-	Attempt    int    `json:"attempt"`
-	FinalError string `json:"finalError,omitempty"`
+	Type       agent.AgentEventType `json:"type"`
+	Success    bool                 `json:"success"`
+	Attempt    int                  `json:"attempt"`
+	FinalError string               `json:"finalError,omitempty"`
 }
 
-func (e *AutoRetryEndEvent) GetType() string {
-	return e.Type
+func NewAutoRetryEndEvent(success bool, attempt int, finalError string) *AutoRetryEndEvent {
+	return &AutoRetryEndEvent{
+		Type:       AgentEventTypeAutoRetryEnd,
+		Success:    success,
+		Attempt:    attempt,
+		FinalError: finalError,
+	}
 }
 
 // SessionSwitchEvent 会话切换事件
 type SessionSwitchEvent struct {
-	Type                string `json:"type"`
-	Reason              string `json:"reason"` // "new" | "switch" | "fork"
-	PreviousSessionFile string `json:"previousSessionFile,omitempty"`
+	Type                agent.AgentEventType `json:"type"`
+	Reason              SessionSwitchReason  `json:"reason"` // "new" | "switch" | "fork"
+	PreviousSessionFile string               `json:"previousSessionFile,omitempty"`
 }
 
-func (e *SessionSwitchEvent) GetType() string {
-	return e.Type
+func NewSessionSwitchEvent(reason SessionSwitchReason, previousSessionFile string) *SessionSwitchEvent {
+	return &SessionSwitchEvent{
+		Type:                AgentEventTypeSessionSwitch,
+		Reason:              reason,
+		PreviousSessionFile: previousSessionFile,
+	}
 }
 
 // ModelSelectEvent 模型选择事件
 type ModelSelectEvent struct {
-	Type          string `json:"type"`
-	Model         ai.Model  `json:"model"`
-	PreviousModel ai.Model  `json:"previousModel,omitempty"`
-	Source        string `json:"source"` // "set" | "cycle" | "restore"
-}
-
-func (e *ModelSelectEvent) GetType() string {
-	return e.Type
+	Type          agent.AgentEventType `json:"type"`
+	Model         ai.Model             `json:"model"`
+	PreviousModel ai.Model             `json:"previousModel,omitempty"`
+	Source        string               `json:"source"` // "set" | "cycle" | "restore"
 }
 
 // SessionStartEvent 会话开始事件
 type SessionStartEvent struct {
-	Type string `json:"type"`
-}
-
-func (e *SessionStartEvent) GetType() string {
-	return e.Type
+	Type agent.AgentEventType `json:"type"`
 }
 
 // SessionBeforeSwitchResult 会话切换前结果

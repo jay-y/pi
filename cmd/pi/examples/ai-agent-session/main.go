@@ -43,7 +43,7 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 
 			// 发送错误事件
 			stream.Push(&ai.AssistantMessageEventError{
-				Type:   ai.ASSISTANT_MESSAGE_EVENT_ERROR,
+				Type:   ai.AssistantMessageEventTypeError,
 				Reason: ai.StopReasonError,
 				Error: &ai.AssistantMessage{
 					Role:         "assistant",
@@ -61,14 +61,14 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 
 		// 最后一次调用成功
 		stream.Push(&ai.AssistantMessageEventStart{
-			Type: ai.ASSISTANT_MESSAGE_EVENT_START,
+			Type: ai.AssistantMessageEventTypeStart,
 			Partial: &ai.AssistantMessage{
 				Role: "assistant",
 			},
 		})
 
 		stream.Push(&ai.AssistantMessageEventTextStart{
-			Type: ai.ASSISTANT_MESSAGE_EVENT_TEXT_START,
+			Type: ai.AssistantMessageEventTypeTextStart,
 			Partial: &ai.AssistantMessage{
 				Role: "assistant",
 				Content: []ai.ContentBlock{
@@ -78,8 +78,8 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 		})
 
 		stream.Push(&ai.AssistantMessageEventTextDelta{
-			Type:    ai.ASSISTANT_MESSAGE_EVENT_TEXT_DELTA,
-			Delta:   "重试机制测试成功！",
+			Type:  ai.AssistantMessageEventTypeTextDelta,
+			Delta: "重试机制测试成功！",
 			Partial: &ai.AssistantMessage{
 				Role: "assistant",
 				Content: []ai.ContentBlock{
@@ -89,7 +89,7 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 		})
 
 		stream.Push(&ai.AssistantMessageEventTextEnd{
-			Type: ai.ASSISTANT_MESSAGE_EVENT_TEXT_END,
+			Type: ai.AssistantMessageEventTypeTextEnd,
 			Partial: &ai.AssistantMessage{
 				Role: "assistant",
 				Content: []ai.ContentBlock{
@@ -99,7 +99,7 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 		})
 
 		stream.Push(&ai.AssistantMessageEventDone{
-			Type:   ai.ASSISTANT_MESSAGE_EVENT_DONE,
+			Type:   ai.AssistantMessageEventTypeDone,
 			Reason: ai.StopReasonStop,
 			Message: &ai.AssistantMessage{
 				Role:       "assistant",
@@ -172,7 +172,7 @@ func main() {
 		fmt.Println("baseUrl not found in .env file")
 		return
 	}
-		
+
 	ctx := context.Background()
 	ai.RegisterBuiltInApiProviders()
 
@@ -181,6 +181,8 @@ func main() {
 		ID:            "qwen3-coder-next:q8_0",
 		Name:          "ollama/qwen3-coder-next:q8_0",
 		API:           ai.ModelApi(ai.ApiOpenAICompletions),
+		APIKey:        "ollama-local",
+		Headers:       nil,
 		Provider:      ai.ModelProvider("ollama"),
 		BaseURL:       baseURL,
 		Reasoning:     true,
@@ -194,7 +196,6 @@ func main() {
 	}
 
 	listener := func(event session.AgentSessionEvent) {
-		fmt.Printf("Event: %s\n", event.GetType())
 		switch ae := event.(type) {
 		case *session.AutoRetryStartEvent:
 			fmt.Printf("\n🔄 [自动重试开始] 第 %d/%d 次尝试，延迟 %d ms\n",

@@ -73,8 +73,8 @@ type CoreBindings struct {
 	SetActiveTools   func(toolNames []string)
 	GetCommands      func() []SlashCommandInfo
 	SetModel         func(model ai.Model) bool
-	GetThinkingLevel func() ThinkingLevel
-	SetThinkingLevel func(level ThinkingLevel)
+	GetThinkingLevel func() ai.ThinkingLevel
+	SetThinkingLevel func(level ai.ThinkingLevel)
 }
 
 // SessionBindings 会话绑定

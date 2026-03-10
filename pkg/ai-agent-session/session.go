@@ -32,17 +32,17 @@ type BuildRuntimeOptions struct {
 
 // AgentSessionConfig 会话配置
 type AgentSessionConfig struct {
-	Agent                  *agent.Agent         `json:"-"`
-	SessionManager         *SessionManager       `json:"-"`
-	SettingsManager        *SettingsManager     `json:"-"`
-	Cwd                    string               `json:"cwd"`
-	ScopedModels           []ScopedModel        `json:"scopedModels,omitempty"`
-	ResourceLoader         ResourceLoader       `json:"-"`
-	CustomTools            []ToolDefinition      `json:"customTools,omitempty"`
-	ModelRegistry          *ModelRegistry       `json:"-"`
-	InitialActiveToolNames []string             `json:"initialActiveToolNames,omitempty"`
+	Agent                  *agent.Agent               `json:"-"`
+	SessionManager         *SessionManager            `json:"-"`
+	SettingsManager        *SettingsManager           `json:"-"`
+	Cwd                    string                     `json:"cwd"`
+	ScopedModels           []ScopedModel              `json:"scopedModels,omitempty"`
+	ResourceLoader         ResourceLoader             `json:"-"`
+	CustomTools            []ToolDefinition           `json:"customTools,omitempty"`
+	ModelRegistry          *ModelRegistry             `json:"-"`
+	InitialActiveToolNames []string                   `json:"initialActiveToolNames,omitempty"`
 	BaseToolsOverride      map[string]agent.AgentTool `json:"baseToolsOverride,omitempty"`
-	ExtensionRunnerRef     *ExtensionRunnerRef  `json:"-"`
+	ExtensionRunnerRef     *ExtensionRunnerRef        `json:"-"`
 }
 
 // AgentSession 代理会话，封装了代理生命周期和会话管理
@@ -114,12 +114,12 @@ type AgentSession struct {
 	lastAssistantMu      sync.RWMutex
 
 	// 事件队列（串行处理事件）
-	eventQueue chan func()
+	eventQueue   chan func()
 	eventQueueWg sync.WaitGroup
 
 	// 重试 Promise 机制（同步创建）
-	retryPromise     chan struct{}
-	retryPromiseMu   sync.Mutex
+	retryPromise   chan struct{}
+	retryPromiseMu sync.Mutex
 }
 
 // NewAgentSession 创建新的代理会话
@@ -318,12 +318,8 @@ func (s *AgentSession) handleMessageEnd(event *agent.AgentEventMessageEnd) {
 		s.lastAssistantMu.Unlock()
 
 		// 成功响应时重置重试计数器并解析 Promise
-		if am.StopReason != StopReasonError && s.retryAttempt > 0 {
-			s.emit(&AutoRetryEndEvent{
-				Type:    "auto_retry_end",
-				Success: true,
-				Attempt: s.retryAttempt,
-			})
+		if am.StopReason != ai.StopReasonError && s.retryAttempt > 0 {
+			s.emit(NewAutoRetryEndEvent(true, s.retryAttempt, am.ErrorMessage))
 			s.retryAttempt = 0
 			s.resolveRetry() // 解析 Promise，让 WaitForRetry 返回
 		}
@@ -434,7 +430,7 @@ func (s *AgentSession) Model() ai.Model {
 }
 
 // ThinkingLevel 获取当前思考级别
-func (s *AgentSession) ThinkingLevel() ThinkingLevel {
+func (s *AgentSession) ThinkingLevel() ai.ThinkingLevel {
 	return s.agent.GetState().ThinkingLevel
 }
 
@@ -858,19 +854,19 @@ type ForkableMessage struct {
 
 // NavigateTreeOptions 导航树选项
 type NavigateTreeOptions struct {
-	TargetId          string  // 目标条目 ID
-	Summarize         bool    // 是否用户想要摘要被放弃的分支
-	CustomInstructions string // 摘要的自定义指令
+	TargetId            string // 目标条目 ID
+	Summarize           bool   // 是否用户想要摘要被放弃的分支
+	CustomInstructions  string // 摘要的自定义指令
 	ReplaceInstructions bool   // 是否用自定义指令替换默认提示
-	Label             string  // 附加到分支摘要条目的标签
+	Label               string // 附加到分支摘要条目的标签
 }
 
 // NavigateTreeResult 导航树结果
 type NavigateTreeResult struct {
-	EditorText    string           // 如果是用户消息，返回文本用于编辑器预填充
-	Cancelled     bool             // 是否被扩展取消
-	Aborted       bool             // 是否被中止
-	SummaryEntry  *BranchSummaryEntry // 摘要条目（如果有）
+	EditorText   string              // 如果是用户消息，返回文本用于编辑器预填充
+	Cancelled    bool                // 是否被扩展取消
+	Aborted      bool                // 是否被中止
+	SummaryEntry *BranchSummaryEntry // 摘要条目（如果有）
 }
 
 // SwitchSession 切换会话
@@ -907,16 +903,12 @@ func (s *AgentSession) SwitchSession(ctx context.Context, sessionPath string) (b
 	}
 
 	if sessionContext.ThinkingLevel != "" {
-		s.agent.SetThinkingLevel(ThinkingLevel(sessionContext.ThinkingLevel))
+		s.agent.SetThinkingLevel(ai.ThinkingLevel(sessionContext.ThinkingLevel))
 	}
 
 	s.ReconnectToAgent()
 
-	s.emit(&SessionSwitchEvent{
-		Type:                "session_switch",
-		Reason:              "resume",
-		PreviousSessionFile: previousSessionFile,
-	})
+	s.emit(NewSessionSwitchEvent(SessionSwitchReasonResume, previousSessionFile))
 
 	return true, nil
 }
@@ -956,11 +948,10 @@ func (s *AgentSession) Fork(ctx context.Context, entryId string) (*ForkResult, e
 	sessionContext := s.sessionManager.BuildSessionContext()
 	s.agent.ReplaceMessages(sessionContext.Messages)
 
-	s.emit(&SessionSwitchEvent{
-		Type:                "session_switch",
-		Reason:              "fork",
-		PreviousSessionFile: previousSessionFile,
-	})
+	s.emit(NewSessionSwitchEvent(
+		SessionSwitchReasonFork,
+		previousSessionFile,
+	))
 
 	return &ForkResult{
 		SelectedText: selectedText,
@@ -1097,8 +1088,8 @@ func (s *AgentSession) GetUserMessagesForForking() []ForkableMessage {
 
 // ContextUsage 上下文使用情况
 type ContextUsage struct {
-	Tokens        *int   // 估算的上下文令牌数，如果未知则为 nil（例如压缩后，下一次 LLM 响应之前）
-	ContextWindow int    // 上下文窗口大小
+	Tokens        *int     // 估算的上下文令牌数，如果未知则为 nil（例如压缩后，下一次 LLM 响应之前）
+	ContextWindow int      // 上下文窗口大小
 	Percent       *float64 // 上下文使用百分比，如果令牌未知则为 nil
 }
 
@@ -1227,11 +1218,10 @@ func (s *AgentSession) NewSession(ctx context.Context, options *NewSessionOption
 	// 重新连接代理
 	s.ReconnectToAgent()
 	// 发送会话切换事件
-	s.emit(&SessionSwitchEvent{
-		Type:                "session_switch",
-		Reason:              "new",
-		PreviousSessionFile: previousSessionFile,
-	})
+	s.emit(NewSessionSwitchEvent(
+		SessionSwitchReasonNew,
+		previousSessionFile,
+	))
 	return nil
 }
 
@@ -1290,7 +1280,7 @@ func (s *AgentSession) GetSessionStats() *SessionStats {
 
 			// 统计工具调用
 			for _, block := range m.Content {
-				if _, ok := block.(*ai.ToolCall); ok {
+				if _, ok := block.(*ai.ToolCallContentBlock); ok {
 					stats.ToolCalls++
 				}
 			}

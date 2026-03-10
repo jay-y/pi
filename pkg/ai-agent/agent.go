@@ -36,22 +36,22 @@ type AgentInterface interface {
 
 // AgentContext 代理上下文
 type AgentContext struct {
-	SystemPrompt string `json:"systemPrompt"`
+	SystemPrompt string       `json:"systemPrompt"`
 	Messages     []ai.Message `json:"messages"`
-	Tools        []AgentTool `json:"tools"`
+	Tools        []AgentTool  `json:"tools"`
 }
 
 // AgentState 代理状态
 type AgentState struct {
-	SystemPrompt     string `json:"systemPrompt"`
-	Model            ai.Model `json:"model"`
+	SystemPrompt     string           `json:"systemPrompt"`
+	Model            ai.Model         `json:"model"`
 	ThinkingLevel    ai.ThinkingLevel `json:"thinkingLevel"`
-	Tools            []AgentTool `json:"tools"`
-	Messages         []ai.Message `json:"messages"`
-	IsStreaming      bool `json:"isStreaming"`
-	StreamMessage    ai.Message `json:"streamMessage"`
-	PendingToolCalls map[string]bool `json:"pendingToolCalls"`
-	Error            string `json:"error"`
+	Tools            []AgentTool      `json:"tools"`
+	Messages         []ai.Message     `json:"messages"`
+	IsStreaming      bool             `json:"isStreaming"`
+	StreamMessage    ai.Message       `json:"streamMessage"`
+	PendingToolCalls map[string]bool  `json:"pendingToolCalls"`
+	Error            string           `json:"error"`
 }
 
 // StreamFn 自定义的流式调用函数
@@ -491,10 +491,10 @@ func (a *Agent) Continue(ctx context.Context) error {
 
 	lastMsg := messages[len(messages)-1]
 	if _, ok := lastMsg.(*ai.AssistantMessage); ok {
-	// if am, ok := lastMsg.(*ai.AssistantMessage); ok {	
+		// if am, ok := lastMsg.(*ai.AssistantMessage); ok {
 		// 先释放锁，再调用 dequeue 方法，避免死锁
 		a.mu.Unlock()
-		
+
 		queuedSteering := a.dequeueSteeringMessages()
 		if len(queuedSteering) > 0 {
 			a.mu.Lock()
@@ -619,7 +619,7 @@ func (a *Agent) runLoop(ctx context.Context, messages []ai.Message, options *str
 					if len(content.Text) > 0 {
 						onlyEmpty = false
 					}
-				case *ai.ToolCall:
+				case *ai.ToolCallContentBlock:
 					if len(content.Name) > 0 {
 						onlyEmpty = false
 					}

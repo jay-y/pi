@@ -26,7 +26,7 @@ var DefaultRetryConfig = RetryConfig{
 
 // isRetryableError 检查是否是可重试错误
 func (s *AgentSession) isRetryableError(msg *ai.AssistantMessage) bool {
-	if msg.StopReason != StopReasonError || msg.ErrorMessage == "" {
+	if msg.StopReason != ai.StopReasonError || msg.ErrorMessage == "" {
 		return false
 	}
 

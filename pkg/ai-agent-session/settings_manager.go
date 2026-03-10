@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/jay-y/pi/pkg/ai"
 )
 
 // CompactionSettings 压缩设置
@@ -72,7 +74,7 @@ type Settings struct {
 	LastChangelogVersion   *string                   `json:"lastChangelogVersion,omitempty"`
 	DefaultProvider        *string                   `json:"defaultProvider,omitempty"`
 	BaseModel           *string                   `json:"defaultModel,omitempty"`
-	DefaultThinkingLevel   *ThinkingLevel        `json:"defaultThinkingLevel,omitempty"`
+	DefaultThinkingLevel   *ai.ThinkingLevel        `json:"defaultThinkingLevel,omitempty"`
 	Transport              *string                   `json:"transport,omitempty"` // default: "sse"
 	SteeringMode           *string                   `json:"steeringMode,omitempty"` // "all" | "one-at-a-time"
 	FollowUpMode           *string                   `json:"followUpMode,omitempty"` // "all" | "one-at-a-time"
@@ -702,14 +704,14 @@ func (sm *SettingsManager) SetTheme(theme string) {
 }
 
 // GetDefaultThinkingLevel 获取默认思考级别
-func (sm *SettingsManager) GetDefaultThinkingLevel() *ThinkingLevel {
+func (sm *SettingsManager) GetDefaultThinkingLevel() *ai.ThinkingLevel {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 	return sm.settings.DefaultThinkingLevel
 }
 
 // SetDefaultThinkingLevel 设置默认思考级别
-func (sm *SettingsManager) SetDefaultThinkingLevel(level ThinkingLevel) {
+func (sm *SettingsManager) SetDefaultThinkingLevel(level ai.ThinkingLevel) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	sm.globalSettings.DefaultThinkingLevel = &level
@@ -1394,7 +1396,7 @@ func (sm *SettingsManager) Validate() error {
 	// 验证设置的有效性
 	if sm.settings.DefaultThinkingLevel != nil {
 		level := *sm.settings.DefaultThinkingLevel
-		validLevels := []ThinkingLevel{ThinkingLevelOff, ThinkingLevelMinimal, ThinkingLevelLow, ThinkingLevelMedium, ThinkingLevelHigh, ThinkingLevelXHigh}
+		validLevels := []ai.ThinkingLevel{ai.ThinkingLevelOff, ai.ThinkingLevelMinimal, ai.ThinkingLevelLow, ai.ThinkingLevelMedium, ai.ThinkingLevelHigh, ai.ThinkingLevelXHigh}
 		found := false
 		for _, valid := range validLevels {
 			if level == valid {

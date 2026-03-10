@@ -37,44 +37,42 @@ func (p *OpenAICompletionsProvider) Stream(
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				stream.Push(&AssistantMessageEventError{
-					Type:   ASSISTANT_MESSAGE_EVENT_ERROR,
-					Error:  &AssistantMessage{
-						StopReason: StopReasonError,
+				stream.Push(NewAssistantMessageEventError(
+					StopReasonError,
+					&AssistantMessage{
+						StopReason:   StopReasonError,
 						ErrorMessage: fmt.Sprintf("panic: %v", r),
-						Timestamp: time.Now().Unix(),
+						Timestamp:    time.Now().Unix(),
 					},
-				})
+				))
 				stream.End(nil)
 			}
 		}()
 
 		output := &AssistantMessage{
-			Role:      "assistant",
-			Content:   []ContentBlock{},
-			API:       model.GetAPI(),
-			Provider:  model.GetProvider(),
-			Model:     model.GetID(),
-			Usage:     Usage{},
+			Role:       "assistant",
+			Content:    []ContentBlock{},
+			API:        model.GetAPI(),
+			Provider:   model.GetProvider(),
+			Model:      model.GetID(),
+			Usage:      Usage{},
 			StopReason: StopReasonStop,
-			Timestamp: time.Now().UnixMilli(),
+			Timestamp:  time.Now().UnixMilli(),
 		}
 
 		if err := p.doStream(model, ctx, opts, stream, output); err != nil {
 			output.StopReason = StopReasonError
 			output.ErrorMessage = err.Error()
-			stream.Push(&AssistantMessageEventError{
-				Type:   ASSISTANT_MESSAGE_EVENT_ERROR,
-				Reason: output.StopReason,
-				Error:  output,
-			})
+			stream.Push(NewAssistantMessageEventError(
+				output.StopReason,
+				output,
+			))
 			stream.End(output)
 		} else {
-			stream.Push(&AssistantMessageEventDone{
-				Type:    ASSISTANT_MESSAGE_EVENT_DONE,
-				Reason:  output.StopReason,
-				Message: output,
-			})
+			stream.Push(NewAssistantMessageEventDone(
+				output.StopReason,
+				output,
+			))
 			stream.End(output)
 		}
 	}()
@@ -91,13 +89,13 @@ func (p *OpenAICompletionsProvider) StreamSimple(
 	if apiKey == "" {
 		apiKey = getEnvApiKey(model.GetProvider())
 	}
-	streamOptions := &StreamOptions{
-		APIKey:          apiKey,
-		Headers:         opts.Headers,
-		MaxTokens:       opts.MaxTokens,
-		Temperature:     opts.Temperature,
-		ReasoningEffort: string(opts.ReasoningEffort),
-	}
+	streamOptions := NewStreamOptions(
+		apiKey,
+		opts.Headers,
+		opts.MaxTokens,
+		opts.Temperature,
+		opts.ReasoningEffort,
+	)
 	return p.Stream(model, ctx, streamOptions)
 }
 
@@ -266,7 +264,7 @@ func (p *OpenAICompletionsProvider) convertAssistantMessage(msg *AssistantMessag
 		switch b := block.(type) {
 		case *TextContentBlock:
 			content += b.Text
-		case *ToolCall:
+		case *ToolCallContentBlock:
 			// 将 Arguments 转换为 JSON 字符串
 			var argsJSON string
 			if b.Arguments != nil {
@@ -274,7 +272,7 @@ func (p *OpenAICompletionsProvider) convertAssistantMessage(msg *AssistantMessag
 					argsJSON = string(bytes)
 				}
 			}
-			
+
 			toolCalls = append(toolCalls, map[string]any{
 				"id":   b.ID,
 				"type": "function",
@@ -310,7 +308,7 @@ func (p *OpenAICompletionsProvider) convertToolResultMessage(msg *ToolResultMess
 			contentStr += tc.Text
 		}
 	}
-	
+
 	return map[string]any{
 		"role":         "tool",
 		"tool_call_id": msg.ToolCallID,
@@ -349,7 +347,7 @@ func (p *OpenAICompletionsProvider) processStream(
 
 	// 发送开始事件
 	// stream.Push(&AssistantMessageEventStart{
-	// 	Type:    ASSISTANT_MESSAGE_EVENT_START,
+	// 	Type:    AssistantMessageEventTypeStart,
 	// 	Partial: output,
 	// })
 
@@ -413,88 +411,101 @@ func (p *OpenAICompletionsProvider) processStream(
 
 		// 处理内容增量
 		if choice.Delta.Content != "" {
-			if currentBlock == nil || currentBlock.GetType() != "text" {
+			if block, ok := currentBlock.(*TextContentBlock); block == nil || ok && block.Type != ContentBlockTypeText {
 				// 结束当前块
 				if currentBlock != nil {
 					p.finishBlock(stream, currentBlock, len(blocks)-1, output)
 				}
 
 				// 开始新块
-				currentBlock = &TextContentBlock{Type: "text"}
+				currentBlock = NewTextContentBlock("")
 				blocks = append(blocks, currentBlock)
 				output.Content = blocks
 
-				stream.Push(&AssistantMessageEventTextStart{
-					Type:         ASSISTANT_MESSAGE_EVENT_TEXT_START,
-					ContentIndex: len(blocks) - 1,
-					Partial:      output,
-				})
+				stream.Push(NewAssistantMessageEventTextStart(
+					len(blocks)-1,
+					output,
+				))
 			}
 
 			if textBlock, ok := currentBlock.(*TextContentBlock); ok {
 				textBlock.Text += choice.Delta.Content
-				stream.Push(&AssistantMessageEventTextDelta{
-					Type:         ASSISTANT_MESSAGE_EVENT_TEXT_DELTA,
-					ContentIndex: len(blocks) - 1,
-					Delta:        choice.Delta.Content,
-					Partial:      output,
-				})
+				stream.Push(NewAssistantMessageEventTextDelta(
+					len(blocks)-1,
+					choice.Delta.Content,
+					output,
+				))
 			}
 		}
 
-		// 处理思考内容
+		// Some endpoints return reasoning in reasoning_content (llama.cpp),
+		// or reasoning (other openai compatible endpoints)
+		// Use the first non-empty reasoning field to avoid duplication
+		// (e.g., chutes.ai returns both reasoning_content and reasoning with same content)
+		var foundReasoningField *string
+		var reasoningContent string
 		if choice.Delta.ReasoningContent != "" {
-			if currentBlock == nil || currentBlock.GetType() != "thinking" {
+			foundReasoningField = &choice.Delta.ReasoningContent
+			reasoningContent = choice.Delta.ReasoningContent
+		} else if choice.Delta.Reasoning != "" {
+			foundReasoningField = &choice.Delta.Reasoning
+			reasoningContent = choice.Delta.Reasoning
+		} else if choice.Delta.ReasoningText != "" {
+			foundReasoningField = &choice.Delta.ReasoningText
+			reasoningContent = choice.Delta.ReasoningText
+		}
+
+		// 处理思考内容
+		if foundReasoningField != nil {
+			if block, ok := currentBlock.(*ThinkingContentBlock); block == nil || ok && block.Type != ContentBlockTypeThinking {
 				if currentBlock != nil {
 					p.finishBlock(stream, currentBlock, len(blocks)-1, output)
 				}
-
-				currentBlock = &ThinkingContentBlock{
-					Type:              "thinking",
-					ThinkingSignature: "reasoning_content",
-				}
+				currentBlock = NewThinkingContentBlock(
+					"",
+					*foundReasoningField,
+				)
 				blocks = append(blocks, currentBlock)
 				output.Content = blocks
 
-				stream.Push(&AssistantMessageEventThinkingStart{
-					Type:         ASSISTANT_MESSAGE_EVENT_THINKING_START,
-					ContentIndex: len(blocks) - 1,
-					Partial:      output,
-				})
+				stream.Push(NewAssistantMessageEventThinkingStart(
+					len(blocks)-1,
+					output,
+				))
 			}
 
 			if thinkingBlock, ok := currentBlock.(*ThinkingContentBlock); ok {
-				thinkingBlock.Thinking += choice.Delta.ReasoningContent
-				stream.Push(&AssistantMessageEventThinkingDelta{
-					Type:         ASSISTANT_MESSAGE_EVENT_THINKING_DELTA,
-					ContentIndex: len(blocks) - 1,
-					Delta:        choice.Delta.ReasoningContent,
-					Partial:      output,
-				})
+				thinkingBlock.Thinking += reasoningContent
+				stream.Push(NewAssistantMessageEventThinkingDelta(
+					len(blocks)-1,
+					reasoningContent,
+					output,
+				))
 			}
 		}
 
 		// 处理工具调用
 		for _, tCall := range choice.Delta.ToolCalls {
-			if currentBlock == nil || currentBlock.GetType() != "toolCall" {
+			if block, ok := currentBlock.(*ToolCallContentBlock); block == nil || ok && block.Type != ContentBlockTypeToolCall {
 				if currentBlock != nil {
 					p.finishBlock(stream, currentBlock, len(blocks)-1, output)
 				}
 
-				currentBlock = &ToolCall{
-					Type: "toolCall",
-				}
+				currentBlock = NewToolCallContentBlock(
+					tCall.ID,
+					tCall.Function.Name,
+					nil,
+				)
 				blocks = append(blocks, currentBlock)
 				output.Content = blocks
 
-				stream.Push(&AssistantMessageEventToolCallStart{
-					Type:         ASSISTANT_MESSAGE_EVENT_TOOLCALL_START,
-					ContentIndex: len(blocks) - 1,
-					Partial:      output,
-				})
+				stream.Push(NewAssistantMessageEventToolCallStart(
+					len(blocks)-1,
+					output,
+				))
 			}
 
-			if tc, ok := currentBlock.(*ToolCall); ok {
+			if tc, ok := currentBlock.(*ToolCallContentBlock); ok {
 				if tCall.ID != "" {
 					tc.ID = tCall.ID
 				}
@@ -505,12 +516,11 @@ func (p *OpenAICompletionsProvider) processStream(
 					tc.Arguments = p.parseStreamingJSON(tCall.Function.Arguments)
 				}
 
-				stream.Push(&AssistantMessageEventToolCallDelta{
-					Type:         ASSISTANT_MESSAGE_EVENT_TOOLCALL_DELTA,
-					ContentIndex: len(blocks) - 1,
-					Delta:        tCall.Function.Arguments,
-					Partial:      output,
-				})
+				stream.Push(NewAssistantMessageEventToolCallDelta(
+					len(blocks)-1,
+					tCall.Function.Arguments,
+					output,
+				))
 			}
 		}
 	}
@@ -532,26 +542,23 @@ func (p *OpenAICompletionsProvider) finishBlock(
 ) {
 	switch b := block.(type) {
 	case *TextContentBlock:
-		stream.Push(&AssistantMessageEventTextEnd{
-			Type:         ASSISTANT_MESSAGE_EVENT_TEXT_END,
-			ContentIndex: index,
-			Content:      b.Text,
-			Partial:      output,
-		})
+		stream.Push(NewAssistantMessageEventTextEnd(
+			index,
+			b.Text,
+			output,
+		))
 	case *ThinkingContentBlock:
-		stream.Push(&AssistantMessageEventThinkingEnd{
-			Type:         ASSISTANT_MESSAGE_EVENT_THINKING_END,
-			ContentIndex: index,
-			Content:      b.Thinking,
-			Partial:      output,
-		})
-	case *ToolCall:
-		stream.Push(&AssistantMessageEventToolCallEnd{
-			Type:         ASSISTANT_MESSAGE_EVENT_TOOLCALL_END,
-			ContentIndex: index,
-			ToolCall:     b,
-			Partial:      output,
-		})
+		stream.Push(NewAssistantMessageEventThinkingEnd(
+			index,
+			b.Thinking,
+			output,
+		))
+	case *ToolCallContentBlock:
+		stream.Push(NewAssistantMessageEventToolCallEnd(
+			index,
+			b,
+			output,
+		))
 	}
 }
 
@@ -559,15 +566,15 @@ func (p *OpenAICompletionsProvider) finishBlock(
 func (p *OpenAICompletionsProvider) mapStopReason(reason string) StopReason {
 	switch reason {
 	case "stop":
-		return "stop"
+		return StopReasonStop
 	case "length":
-		return "length"
+		return StopReasonLength
 	case "tool_calls":
-		return "toolUse"
+		return StopReasonToolUse
 	case "content_filter":
-		return "error"
+		return StopReasonError
 	default:
-		return "stop"
+		return StopReasonStop
 	}
 }
 
@@ -588,13 +595,15 @@ type ChatCompletionChunk struct {
 	Created int64  `json:"created"`
 	Model   string `json:"model"`
 	Choices []struct {
-		Index        int `json:"index"`
-		Delta        struct {
-			Role            string     `json:"role"`
-			Content         string     `json:"content"`
-			ReasoningContent string    `json:"reasoning_content"`
-			ToolCalls       []struct {
-				Index    int `json:"index"`
+		Index int `json:"index"`
+		Delta struct {
+			Role             string `json:"role"`
+			Content          string `json:"content"`
+			ReasoningContent string `json:"reasoning_content"`
+			Reasoning        string `json:"reasoning"`
+			ReasoningText    string `json:"reasoning_text"`
+			ToolCalls        []struct {
+				Index    int    `json:"index"`
 				ID       string `json:"id"`
 				Type     string `json:"type"`
 				Function struct {
@@ -606,20 +615,20 @@ type ChatCompletionChunk struct {
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
 	Usage *struct {
-		PromptTokens     int `json:"prompt_tokens"`
+		PromptTokens        int `json:"prompt_tokens"`
 		PromptTokensDetails *struct {
-			AudioTokens int `json:"audio_tokens"`
+			AudioTokens  int `json:"audio_tokens"`
 			CachedTokens int `json:"cached_tokens"`
 		} `json:"prompt_tokens_details"`
-		CompletionTokens int `json:"completion_tokens"`
+		CompletionTokens        int `json:"completion_tokens"`
 		CompletionTokensDetails *struct {
 			AcceptedPredictionTokens int `json:"accepted_prediction_tokens"`
-			AudioTokens int `json:"audio_tokens"`
-			ReasoningTokens int `json:"reasoning_tokens"`
+			AudioTokens              int `json:"audio_tokens"`
+			ReasoningTokens          int `json:"reasoning_tokens"`
 			RejectedPredictionTokens int `json:"rejected_prediction_tokens"`
 		} `json:"completion_tokens_details"`
-		TotalTokens      int `json:"total_tokens"`
-		CachedTokens     int `json:"cached_tokens"`
+		TotalTokens  int `json:"total_tokens"`
+		CachedTokens int `json:"cached_tokens"`
 	} `json:"usage"`
 }
 

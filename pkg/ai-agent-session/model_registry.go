@@ -135,7 +135,7 @@ type ModelRegistry struct {
 	mu                    sync.RWMutex
 }
 
-func (mr *ModelRegistry) GetModel(provider ModelProvider, modelID string) (ai.Model, bool) {
+func (mr *ModelRegistry) GetModel(provider ai.ModelProvider, modelID string) (ai.Model, bool) {
 	mr.mu.RLock()
 	defer mr.mu.RUnlock()
 	model := mr.Find(string(provider), modelID)
@@ -145,7 +145,7 @@ func (mr *ModelRegistry) GetModel(provider ModelProvider, modelID string) (ai.Mo
 	return model, true
 }
 
-func (mr *ModelRegistry) GetModels(provider ModelProvider) []ai.Model {
+func (mr *ModelRegistry) GetModels(provider ai.ModelProvider) []ai.Model {
 	mr.mu.RLock()
 	defer mr.mu.RUnlock()
 
@@ -620,8 +620,8 @@ func (mr *ModelRegistry) parseModels(config *ModelsConfig) []*ai.BaseModel {
 			models = append(models, &ai.BaseModel{
 				ID:            modelDef.ID,
 				Name:          name,
-				API:           ModelApi(api),
-				Provider:      ModelProvider(providerName),
+				API:           ai.ModelApi(api),
+				Provider:      ai.ModelProvider(providerName),
 				BaseURL:       providerConfig.BaseURL,
 				Reasoning:     reasoning,
 				Input:         input,
@@ -754,8 +754,8 @@ func (mr *ModelRegistry) applyProviderConfig(providerName string, config Provide
 			mr.models = append(mr.models, &ai.BaseModel{
 				ID:            modelDef.ID,
 				Name:          modelDef.Name,
-				API:           ModelApi(api),
-				Provider:      ModelProvider(providerName),
+				API:           ai.ModelApi(api),
+				Provider:      ai.ModelProvider(providerName),
 				BaseURL:       config.BaseURL,
 				Reasoning:     modelDef.Reasoning,
 				Input:         modelDef.Input,

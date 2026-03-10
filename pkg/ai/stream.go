@@ -22,6 +22,16 @@ type StreamOptions struct {
 	Extra map[string]any `json:"-"`
 }
 
+func NewStreamOptions(apiKey string, headers map[string]string, maxTokens int, temperature *float64, reasoningEffort string)  *StreamOptions {
+	return &StreamOptions{
+		APIKey:          apiKey,
+		Headers:         headers,
+		MaxTokens:       maxTokens,
+		Temperature:     temperature,
+		ReasoningEffort: string(reasoningEffort),
+	}
+}
+
 // ThinkingBudgets 思考预算
 type ThinkingBudgets struct {
 	Minimal int `json:"minimal,omitempty"`

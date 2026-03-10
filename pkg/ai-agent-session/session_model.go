@@ -58,7 +58,7 @@ func (s *AgentSession) SetModel(ctx context.Context, model ai.Model) error {
 // ModelCycleResult 模型循环结果
 type ModelCycleResult struct {
 	Model         ai.Model         `json:"model"`
-	ThinkingLevel ThinkingLevel `json:"thinkingLevel"`
+	ThinkingLevel ai.ThinkingLevel `json:"thinkingLevel"`
 	IsScoped      bool          `json:"isScoped"`
 }
 
@@ -206,7 +206,7 @@ func (s *AgentSession) getScopedModelsWithApiKey() ([]ScopedModel, error) {
 }
 
 // SetThinkingLevel 设置思考级别
-func (s *AgentSession) SetThinkingLevel(level ThinkingLevel) {
+func (s *AgentSession) SetThinkingLevel(level ai.ThinkingLevel) {
 	availableLevels := s.GetAvailableThinkingLevels()
 	effectiveLevel := level
 
@@ -235,9 +235,9 @@ func (s *AgentSession) SetThinkingLevel(level ThinkingLevel) {
 }
 
 // CycleThinkingLevel 循环切换思考级别
-func (s *AgentSession) CycleThinkingLevel() ThinkingLevel {
+func (s *AgentSession) CycleThinkingLevel() ai.ThinkingLevel {
 	if !s.SupportsThinking() {
-		return ThinkingLevelOff
+		return ai.ThinkingLevelOff
 	}
 
 	levels := s.GetAvailableThinkingLevels()
@@ -259,15 +259,15 @@ func (s *AgentSession) CycleThinkingLevel() ThinkingLevel {
 }
 
 // GetAvailableThinkingLevels 获取可用的思考级别
-func (s *AgentSession) GetAvailableThinkingLevels() []ThinkingLevel {
+func (s *AgentSession) GetAvailableThinkingLevels() []ai.ThinkingLevel {
 	if !s.SupportsThinking() {
-		return []ThinkingLevel{ThinkingLevelOff}
+		return []ai.ThinkingLevel{ai.ThinkingLevelOff}
 	}
 
 	if s.SupportsXhighThinking() {
-		return ThinkingLevelsWithXHigh
+		return ai.ThinkingLevelsWithXHigh
 	}
-	return ThinkingLevels
+	return ai.ThinkingLevels
 }
 
 // SupportsThinking 检查是否支持思考
@@ -289,9 +289,9 @@ func (s *AgentSession) SupportsXhighThinking() bool {
 }
 
 // clampThinkingLevel 调整思考级别到可用范围
-func (s *AgentSession) clampThinkingLevel(level ThinkingLevel, availableLevels []ThinkingLevel) ThinkingLevel {
-	ordered := ThinkingLevelsWithXHigh
-	available := make(map[ThinkingLevel]bool)
+func (s *AgentSession) clampThinkingLevel(level ai.ThinkingLevel, availableLevels []ai.ThinkingLevel) ai.ThinkingLevel {
+	ordered := ai.ThinkingLevelsWithXHigh
+	available := make(map[ai.ThinkingLevel]bool)
 	for _, l := range availableLevels {
 		available[l] = true
 	}
@@ -309,7 +309,7 @@ func (s *AgentSession) clampThinkingLevel(level ThinkingLevel, availableLevels [
 		if len(availableLevels) > 0 {
 			return availableLevels[0]
 		}
-		return ThinkingLevelOff
+		return ai.ThinkingLevelOff
 	}
 
 	// 从请求级别开始向上查找
@@ -329,7 +329,7 @@ func (s *AgentSession) clampThinkingLevel(level ThinkingLevel, availableLevels [
 	if len(availableLevels) > 0 {
 		return availableLevels[0]
 	}
-	return ThinkingLevelOff
+	return ai.ThinkingLevelOff
 }
 
 // emitModelSelect 发送模型选择事件

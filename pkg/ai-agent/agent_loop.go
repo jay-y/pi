@@ -11,12 +11,12 @@ import (
 
 // AgentLoopConfig 代理循环的配置
 type AgentLoopConfig struct {
-	Model           ai.Model `json:"model"`
-	Reasoning       ai.ThinkingLevel `json:"reasoning"`
-	SessionID       string        `json:"sessionID"`
-	Transport       ai.Transport  `json:"transport"`
+	Model           ai.Model            `json:"model"`
+	Reasoning       ai.ThinkingLevel    `json:"reasoning"`
+	SessionID       string              `json:"sessionID"`
+	Transport       ai.Transport        `json:"transport"`
 	ThinkingBudgets *ai.ThinkingBudgets `json:"thinkingBudgets"`
-	MaxRetryDelayMs int           `json:"maxRetryDelayMs"`
+	MaxRetryDelayMs int                 `json:"maxRetryDelayMs"`
 
 	ConvertToLLM     func(messages []ai.Message) ([]ai.Message, error)
 	TransformContext func(messages []ai.Message, ctx context.Context) ([]ai.Message, error)
@@ -63,11 +63,11 @@ func AgentLoop(prompts []ai.Message, context AgentContext, config AgentLoopConfi
 			Tools:        context.Tools,
 		}
 
-		stream.Push(&AgentEventStart{Type: AGENT_MESSAGE_EVENT_AGENT_START})
-		stream.Push(&AgentEventTurnStart{Type: AGENT_MESSAGE_EVENT_TURN_START})
+		stream.Push(&AgentEventStart{Type: AgentEventTypeStart})
+		stream.Push(&AgentEventTurnStart{Type: AgentEventTypeTurnStart})
 		for _, prompt := range prompts {
-			stream.Push(&AgentEventMessageStart{Type: AGENT_MESSAGE_EVENT_MESSAGE_START, Message: prompt})
-			stream.Push(&AgentEventMessageEnd{Type: AGENT_MESSAGE_EVENT_MESSAGE_END, Message: prompt})
+			stream.Push(&AgentEventMessageStart{Type: AgentEventTypeMessageStart, Message: prompt})
+			stream.Push(&AgentEventMessageEnd{Type: AgentEventTypeMessageEnd, Message: prompt})
 		}
 
 		runLoop(currentContext, newMessages, config, ctx, stream, streamFn)
@@ -103,8 +103,8 @@ func AgentLoopContinue(context AgentContext, config AgentLoopConfig, ctx context
 			Tools:        context.Tools,
 		}
 
-		stream.Push(&AgentEventStart{Type: AGENT_MESSAGE_EVENT_AGENT_START})
-		stream.Push(&AgentEventTurnStart{Type: AGENT_MESSAGE_EVENT_TURN_START})
+		stream.Push(&AgentEventStart{Type: AgentEventTypeStart})
+		stream.Push(&AgentEventTurnStart{Type: AgentEventTypeTurnStart})
 
 		runLoop(currentContext, newMessages, config, ctx, stream, streamFn)
 	}()
@@ -135,15 +135,15 @@ func runLoop(
 
 		for hasMoreToolCalls || len(pendingMessages) > 0 {
 			if !firstTurn {
-				stream.Push(&AgentEventTurnStart{Type: AGENT_MESSAGE_EVENT_TURN_START})
+				stream.Push(&AgentEventTurnStart{Type: AgentEventTypeTurnStart})
 			} else {
 				firstTurn = false
 			}
 
 			if len(pendingMessages) > 0 {
 				for _, msg := range pendingMessages {
-					stream.Push(&AgentEventMessageStart{Type: AGENT_MESSAGE_EVENT_MESSAGE_START, Message: msg})
-					stream.Push(&AgentEventMessageEnd{Type: AGENT_MESSAGE_EVENT_MESSAGE_END, Message: msg})
+					stream.Push(&AgentEventMessageStart{Type: AgentEventTypeMessageStart, Message: msg})
+					stream.Push(&AgentEventMessageEnd{Type: AgentEventTypeMessageEnd, Message: msg})
 					currentContext.Messages = append(currentContext.Messages, msg)
 					newMessages = append(newMessages, msg)
 				}
@@ -152,7 +152,7 @@ func runLoop(
 
 			message, err := streamAssistantResponse(currentContext, config, ctx, stream, streamFn)
 			if err != nil {
-				stream.Push(&AgentEventEnd{Type: AGENT_MESSAGE_EVENT_AGENT_END, Messages: newMessages})
+				stream.Push(&AgentEventEnd{Type: AgentEventTypeEnd, Messages: newMessages})
 				stream.End(newMessages)
 				return
 			}
@@ -161,25 +161,25 @@ func runLoop(
 
 			assistantMsg, ok := message.(*ai.AssistantMessage)
 			if !ok {
-				stream.Push(&AgentEventEnd{Type: AGENT_MESSAGE_EVENT_AGENT_END, Messages: newMessages})
+				stream.Push(&AgentEventEnd{Type: AgentEventTypeEnd, Messages: newMessages})
 				stream.End(newMessages)
 				return
 			}
 
-			if assistantMsg.StopReason == ai.StopReasonError || assistantMsg.StopReason == ai.StopReasonAborted {
+			if assistantMsg.StopReason == ai.StopReasonError || assistantMsg.StopReason == ai.StopReasonStop {
 				stream.Push(&AgentEventTurnEnd{
-					Type:        AGENT_MESSAGE_EVENT_TURN_END,
+					Type:        AgentEventTypeTurnEnd,
 					Message:     message,
 					ToolResults: []ai.ToolResultMessage{},
 				})
-				stream.Push(&AgentEventEnd{Type: AGENT_MESSAGE_EVENT_AGENT_END, Messages: newMessages})
+				stream.Push(&AgentEventEnd{Type: AgentEventTypeEnd, Messages: newMessages})
 				stream.End(newMessages)
 				return
 			}
 
-			toolCalls := []*ai.ToolCall{}
+			toolCalls := []*ai.ToolCallContentBlock{}
 			for _, c := range assistantMsg.Content {
-				if tc, ok := c.(*ai.ToolCall); ok {
+				if tc, ok := c.(*ai.ToolCallContentBlock); ok {
 					toolCalls = append(toolCalls, tc)
 				}
 			}
@@ -204,7 +204,7 @@ func runLoop(
 			}
 
 			stream.Push(&AgentEventTurnEnd{
-				Type:        AGENT_MESSAGE_EVENT_TURN_END,
+				Type:        AgentEventTypeTurnEnd,
 				Message:     message,
 				ToolResults: toolResults,
 			})
@@ -232,7 +232,7 @@ func runLoop(
 		break
 	}
 
-	stream.Push(&AgentEventEnd{Type: AGENT_MESSAGE_EVENT_AGENT_END, Messages: newMessages})
+	stream.Push(&AgentEventEnd{Type: AgentEventTypeEnd, Messages: newMessages})
 	stream.End(newMessages)
 }
 
@@ -304,7 +304,7 @@ func streamAssistantResponse(
 			partialMessage = e.Partial
 			context.Messages = append(context.Messages, partialMessage)
 			addedPartial = true
-			stream.Push(&AgentEventMessageStart{Type: AGENT_MESSAGE_EVENT_MESSAGE_START, Message: partialMessage})
+			stream.Push(&AgentEventMessageStart{Type: AgentEventTypeMessageStart, Message: partialMessage})
 
 		case *ai.AssistantMessageEventTextStart, *ai.AssistantMessageEventTextDelta, *ai.AssistantMessageEventTextEnd,
 			*ai.AssistantMessageEventThinkingStart, *ai.AssistantMessageEventThinkingDelta, *ai.AssistantMessageEventThinkingEnd,
@@ -336,7 +336,7 @@ func streamAssistantResponse(
 				}
 
 				stream.Push(&AgentEventMessageUpdate{
-					Type:                  AGENT_MESSAGE_EVENT_MESSAGE_UPDATE,
+					Type:                  AgentEventTypeMessageUpdate,
 					Message:               partialMessage,
 					AssistantMessageEvent: event,
 				})
@@ -351,9 +351,9 @@ func streamAssistantResponse(
 			}
 
 			if !addedPartial {
-				stream.Push(&AgentEventMessageStart{Type: AGENT_MESSAGE_EVENT_MESSAGE_START, Message: result})
+				stream.Push(&AgentEventMessageStart{Type: AgentEventTypeMessageStart, Message: result})
 			}
-			stream.Push(&AgentEventMessageEnd{Type: AGENT_MESSAGE_EVENT_MESSAGE_END, Message: result})
+			stream.Push(&AgentEventMessageEnd{Type: AgentEventTypeMessageEnd, Message: result})
 			return result, nil
 		}
 	}
@@ -375,9 +375,9 @@ func executeToolCalls(
 	stream *AgentEventStream,
 	getSteeringMessages func() ([]ai.Message, error),
 ) (*toolExecutionResult, error) {
-	toolCalls := []*ai.ToolCall{}
+	toolCalls := []*ai.ToolCallContentBlock{}
 	for _, c := range assistantMessage.Content {
-		if tc, ok := c.(*ai.ToolCall); ok {
+		if tc, ok := c.(*ai.ToolCallContentBlock); ok {
 			toolCalls = append(toolCalls, tc)
 		}
 	}
@@ -395,7 +395,7 @@ func executeToolCalls(
 		}
 
 		stream.Push(&AgentEventToolExecutionStart{
-			Type:       AGENT_MESSAGE_EVENT_TOOL_EXECUTION_START,
+			Type:       AgentEventTypeToolExecutionStart,
 			ToolCallID: toolCall.ID,
 			ToolName:   toolCall.Name,
 			Args:       toolCall.Arguments,
@@ -419,9 +419,9 @@ func executeToolCalls(
 				}
 				isError = true
 			} else {
-				r, err := tool.Execute(ctx, validatedArgs,  func(partialResult *AgentToolResult) {
+				r, err := tool.Execute(ctx, validatedArgs, func(partialResult *AgentToolResult) {
 					stream.Push(&AgentEventToolExecutionUpdate{
-						Type:          AGENT_MESSAGE_EVENT_TOOL_EXECUTION_UPDATE,
+						Type:          AgentEventTypeToolExecutionUpdate,
 						ToolCallID:    toolCall.ID,
 						ToolName:      toolCall.Name,
 						Args:          toolCall.Arguments,
@@ -441,10 +441,10 @@ func executeToolCalls(
 		}
 
 		stream.Push(&AgentEventToolExecutionEnd{
-			Type:       AGENT_MESSAGE_EVENT_TOOL_EXECUTION_END,
-			ToolName:   toolCall.Name,
-			Result:     result,
-			IsError:    isError,
+			Type:     AgentEventTypeToolExecutionEnd,
+			ToolName: toolCall.Name,
+			Result:   result,
+			IsError:  isError,
 		})
 
 		toolResultMessage := ai.NewToolResultMessage(
@@ -458,8 +458,8 @@ func executeToolCalls(
 		}
 
 		results = append(results, *toolResultMessage)
-		stream.Push(&AgentEventMessageStart{Type: AGENT_MESSAGE_EVENT_MESSAGE_START, Message: toolResultMessage})
-		stream.Push(&AgentEventMessageEnd{Type: AGENT_MESSAGE_EVENT_MESSAGE_END, Message: toolResultMessage})
+		stream.Push(&AgentEventMessageStart{Type: AgentEventTypeMessageStart, Message: toolResultMessage})
+		stream.Push(&AgentEventMessageEnd{Type: AgentEventTypeMessageEnd, Message: toolResultMessage})
 
 		if getSteeringMessages != nil {
 			msgs, _ := getSteeringMessages()
@@ -481,24 +481,24 @@ func executeToolCalls(
 }
 
 // skipToolCall 跳过工具调用
-func skipToolCall(toolCall *ai.ToolCall, stream *AgentEventStream) *ai.ToolResultMessage {
+func skipToolCall(toolCall *ai.ToolCallContentBlock, stream *AgentEventStream) *ai.ToolResultMessage {
 	result := AgentToolResult{
 		Content: []ai.ContentBlock{ai.NewTextContentBlock("Skipped due to queued user message.")},
 		Details: map[string]any{},
 	}
 
 	stream.Push(&AgentEventToolExecutionStart{
-		Type:       AGENT_MESSAGE_EVENT_TOOL_EXECUTION_START,
+		Type:       AgentEventTypeToolExecutionStart,
 		ToolCallID: toolCall.ID,
 		ToolName:   toolCall.Name,
 		Args:       toolCall.Arguments,
 	})
 
 	stream.Push(&AgentEventToolExecutionEnd{
-		Type:       AGENT_MESSAGE_EVENT_TOOL_EXECUTION_END,
-		ToolName:   toolCall.Name,
-		Result:     result,
-		IsError:    true,
+		Type:     AgentEventTypeToolExecutionEnd,
+		ToolName: toolCall.Name,
+		Result:   result,
+		IsError:  true,
 	})
 
 	toolResultMessage := ai.NewToolResultMessage(
@@ -508,14 +508,14 @@ func skipToolCall(toolCall *ai.ToolCall, stream *AgentEventStream) *ai.ToolResul
 		true,
 	)
 
-	stream.Push(&AgentEventMessageStart{Type: AGENT_MESSAGE_EVENT_MESSAGE_START, Message: toolResultMessage})
-	stream.Push(&AgentEventMessageEnd{Type: AGENT_MESSAGE_EVENT_MESSAGE_END, Message: toolResultMessage})
+	stream.Push(&AgentEventMessageStart{Type: AgentEventTypeMessageStart, Message: toolResultMessage})
+	stream.Push(&AgentEventMessageEnd{Type: AgentEventTypeMessageEnd, Message: toolResultMessage})
 
 	return toolResultMessage
 }
 
 // validateToolArguments 验证工具参数
-func validateToolArguments(tool *AgentTool, toolCall *ai.ToolCall) (map[string]any, error) {
+func validateToolArguments(tool *AgentTool, toolCall *ai.ToolCallContentBlock) (map[string]any, error) {
 	return toolCall.Arguments.(map[string]any), nil
 }
 

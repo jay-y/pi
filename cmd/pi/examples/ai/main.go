@@ -10,14 +10,6 @@ import (
 	"github.com/jay-y/pi/pkg/ai"
 )
 
-type Test interface {
-	Exec()
-}
-
-type Xxx struct {
-	Test Test
-}
-
 func GetEnvConfig() map[string]any {
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -53,8 +45,8 @@ func main() {
 	// 注册内置 API 提供者
 	ai.RegisterBuiltInApiProviders()
 	ollamaModel := &ai.BaseModel{
-		ID:            "qwen3-coder-next:q8_0",
-		Name:          "ollama/qwen3-coder-next:q8_0",
+		ID:   "qwen3-coder-next:q8_0",
+		Name: "ollama/qwen3-coder-next:q8_0",
 		// ID:            "qwen3.5:122b",
 		// Name:          "ollama/qwen3.5:122b",
 		API:           ai.ModelApi(ai.ApiOpenAICompletions),
@@ -77,7 +69,7 @@ func main() {
 
 	// 流式调用
 	stream, err := ai.Stream(ollamaModel, cxt, &ai.StreamOptions{
-		Ctx: context.Background(),
+		Ctx:    context.Background(),
 		APIKey: "ollama",
 	})
 	if err != nil {
@@ -102,7 +94,7 @@ func main() {
 
 	// 完整调用（非流式）
 	response, err := ai.Complete(ollamaModel, cxt, &ai.StreamOptions{
-		Ctx: context.Background(),
+		Ctx:    context.Background(),
 		APIKey: "ollama",
 	})
 	if err != nil {

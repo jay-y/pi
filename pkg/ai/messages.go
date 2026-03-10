@@ -2,64 +2,72 @@ package ai
 
 // ContentBlock 内容块接口
 type ContentBlock interface {
-	GetType() string
 }
 
 // TextContent 文本内容块
 type TextContentBlock struct {
-	Type           string `json:"type"`
-	Text           string `json:"text"`
-	TextSignature  string `json:"textSignature,omitempty"`
-}
-
-func (t *TextContentBlock) GetType() string {
-	return t.Type
+	Type          ContentBlockType `json:"type"`
+	Text          string           `json:"text"`
+	TextSignature string           `json:"textSignature,omitempty"`
 }
 
 // NewTextContent 创建新的文本内容块
 func NewTextContentBlock(text string) *TextContentBlock {
 	return &TextContentBlock{
-		Type: "text",
+		Type: ContentBlockTypeText,
 		Text: text,
 	}
 }
 
 // ThinkingContent 思考内容块
 type ThinkingContentBlock struct {
-	Type              string `json:"type"`
-	Thinking          string `json:"thinking"`
-	ThinkingSignature string `json:"thinkingSignature,omitempty"`
-}
-
-func (t *ThinkingContentBlock) GetType() string {
-	return t.Type
+	Type              ContentBlockType `json:"type"`
+	Thinking          string           `json:"thinking"`
+	ThinkingSignature string           `json:"thinkingSignature,omitempty"`
+	Redacted          bool             `json:"redacted,omitempty"`
 }
 
 // NewThinkingContent 创建新的思考内容块
-func NewThinkingContentBlock(thinking string) *ThinkingContentBlock {
+func NewThinkingContentBlock(thinking string, signature string) *ThinkingContentBlock {
 	return &ThinkingContentBlock{
-		Type:     "thinking",
-		Thinking: thinking,
+		Type:              ContentBlockTypeThinking,
+		Thinking:          thinking,
+		ThinkingSignature: signature,
 	}
 }
 
 // ImageContent 图片内容块
 type ImageContentBlock struct {
-	Type     string `json:"type"`
-	Data     string `json:"data"` // base64 编码的图片数据
-	MimeType string `json:"mimeType"` // 例如 "image/jpeg", "image/png"
-}
-
-func (i *ImageContentBlock) GetType() string {
-	return i.Type
+	Type     ContentBlockType `json:"type"`
+	Data     string           `json:"data"`     // base64 编码的图片数据
+	MimeType string           `json:"mimeType"` // 例如 "image/jpeg", "image/png"
 }
 
 // NewImageContent 创建新的图片内容块
 func NewImageContentBlock(data, mimeType string) *ImageContentBlock {
 	return &ImageContentBlock{
-		Type:     "image",
+		Type:     ContentBlockTypeImage,
 		Data:     data,
 		MimeType: mimeType,
+	}
+}
+
+// ToolCallContentBlock 工具调用内容块
+type ToolCallContentBlock struct {
+	Type             ContentBlockType `json:"type"`
+	ID               string           `json:"id"`
+	Name             string           `json:"name"`
+	Arguments        any              `json:"arguments"`
+	ThoughtSignature *string          `json:"thoughtSignature,omitempty"`
+}
+
+// NewToolCallContentBlock 创建新的工具调用内容块
+func NewToolCallContentBlock(id, name string, arguments map[string]any) *ToolCallContentBlock {
+	return &ToolCallContentBlock{
+		Type:      ContentBlockTypeToolCall,
+		ID:        id,
+		Name:      name,
+		Arguments: &arguments,
 	}
 }
 
@@ -71,9 +79,9 @@ type Message interface {
 
 // UserMessage 用户消息
 type UserMessage struct {
-	Role      string         `json:"role"`
-	Content   any            `json:"content"` // string 或 []ContentBlock
-	Timestamp int64         `json:"timestamp"` // Unix 毫秒时间戳
+	Role      string `json:"role"`
+	Content   any    `json:"content"`   // string 或 []ContentBlock
+	Timestamp int64  `json:"timestamp"` // Unix 毫秒时间戳
 }
 
 func (u *UserMessage) GetRole() string {
@@ -82,8 +90,8 @@ func (u *UserMessage) GetRole() string {
 
 func (u *UserMessage) ToMap() map[string]any {
 	return map[string]any{
-		"role": u.Role,
-		"content": u.Content,
+		"role":      u.Role,
+		"content":   u.Content,
 		"timestamp": u.Timestamp,
 	}
 }
@@ -99,15 +107,15 @@ func NewUserMessage(content any) *UserMessage {
 
 // AssistantMessage 助手消息
 type AssistantMessage struct {
-	Role         string                `json:"role"`
-	Content      []ContentBlock        `json:"content"`
-	API          ModelApi              `json:"api"`
-	Provider     ModelProvider         `json:"provider"`
-	Model        string                `json:"model"`
-	Usage        Usage                 `json:"usage"`
-	StopReason   StopReason            `json:"stopReason"`
-	ErrorMessage string                `json:"errorMessage,omitempty"`
-	Timestamp    int64                 `json:"timestamp"` // Unix 毫秒时间戳
+	Role         string         `json:"role"`
+	Content      []ContentBlock `json:"content"`
+	API          ModelApi       `json:"api"`
+	Provider     ModelProvider  `json:"provider"`
+	Model        string         `json:"model"`
+	Usage        Usage          `json:"usage"`
+	StopReason   StopReason     `json:"stopReason"`
+	ErrorMessage string         `json:"errorMessage,omitempty"`
+	Timestamp    int64          `json:"timestamp"` // Unix 毫秒时间戳
 }
 
 func (a *AssistantMessage) GetRole() string {
@@ -116,15 +124,15 @@ func (a *AssistantMessage) GetRole() string {
 
 func (a *AssistantMessage) ToMap() map[string]any {
 	return map[string]any{
-		"role": a.Role,
-		"content": a.Content,
-		"api": a.API,
-		"provider": a.Provider,
-		"model": a.Model,
-		"usage": a.Usage,
-		"stopReason": a.StopReason,
+		"role":         a.Role,
+		"content":      a.Content,
+		"api":          a.API,
+		"provider":     a.Provider,
+		"model":        a.Model,
+		"usage":        a.Usage,
+		"stopReason":   a.StopReason,
 		"errorMessage": a.ErrorMessage,
-		"timestamp": a.Timestamp,
+		"timestamp":    a.Timestamp,
 	}
 }
 
@@ -143,13 +151,13 @@ func NewAssistantMessage(api ModelApi, provider ModelProvider, model string) *As
 
 // ToolResultMessage 工具结果消息
 type ToolResultMessage struct {
-	Role        string                `json:"role"`
-	ToolCallID  string                `json:"toolCallId"`
-	ToolName    string                `json:"toolName"`
-	Content     []ContentBlock        `json:"content"` // 支持文本和图片
-	Details     any           		  `json:"details,omitempty"`
-	IsError     bool                  `json:"isError"`
-	Timestamp   int64                 `json:"timestamp"` // Unix 毫秒时间戳
+	Role       string         `json:"role"`
+	ToolCallID string         `json:"toolCallId"`
+	ToolName   string         `json:"toolName"`
+	Content    []ContentBlock `json:"content"` // 支持文本和图片
+	Details    any            `json:"details,omitempty"`
+	IsError    bool           `json:"isError"`
+	Timestamp  int64          `json:"timestamp"` // Unix 毫秒时间戳
 }
 
 func (t *ToolResultMessage) GetRole() string {
@@ -158,13 +166,13 @@ func (t *ToolResultMessage) GetRole() string {
 
 func (t *ToolResultMessage) ToMap() map[string]any {
 	return map[string]any{
-		"role": t.Role,
+		"role":       t.Role,
 		"toolCallId": t.ToolCallID,
-		"toolName": t.ToolName,
-		"content": t.Content,
-		"details": t.Details,
-		"isError": t.IsError,
-		"timestamp": t.Timestamp,
+		"toolName":   t.ToolName,
+		"content":    t.Content,
+		"details":    t.Details,
+		"isError":    t.IsError,
+		"timestamp":  t.Timestamp,
 	}
 }
 

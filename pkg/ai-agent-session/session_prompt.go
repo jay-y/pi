@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jay-y/pi/pkg/ai"
+	agent "github.com/jay-y/pi/pkg/ai-agent"
 )
 
 // 错误定义
@@ -194,9 +195,10 @@ func (s *AgentSession) SendCustomMessage(ctx context.Context, message CustomMess
 	}
 
 	if s.agent.GetState().IsStreaming {
-		// 当流式传输时，需要将 CustomMessage 转换为 Message
-		// 这里简化处理，直接返回错误
-		return errors.New("cannot send custom message while streaming")
+		if options.DeliverAs == "followUp" {
+			return s.agent.FollowUp(&message)
+		}
+		return s.agent.Steer(&message)
 	}
 
 	if options.TriggerTurn {
@@ -210,7 +212,8 @@ func (s *AgentSession) SendCustomMessage(ctx context.Context, message CustomMess
 		message.Display,
 		message.Details,
 	)
-
+	s.emit(agent.NewAgentEventMessageStart(&message))
+	s.emit(agent.NewAgentEventMessageEnd(&message))
 	return nil
 }
 

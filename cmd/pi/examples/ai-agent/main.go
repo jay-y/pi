@@ -119,11 +119,12 @@ func main() {
 
 	ai.RegisterBuiltInApiProviders()
 	ollamaModel := &ai.BaseModel{
-		ID:            "qwen3-coder-next:q8_0",
-		Name:          "ollama/qwen3-coder-next:q8_0",
+		ID:   "qwen3-coder-next:q8_0",
+		Name: "ollama/qwen3-coder-next:q8_0",
 		// ID:            "qwen3.5:35b",
 		// Name:          "ollama/qwen3.5:35b",
 		API:           ai.ModelApi(ai.ApiOpenAICompletions),
+		APIKey:        "ollama-local",
 		Provider:      ai.ModelProvider("ollama"),
 		BaseURL:       baseURL,
 		Reasoning:     false,
@@ -134,8 +135,8 @@ func main() {
 	}
 	al := agent.NewAgent(agent.AgentOptions{
 		InitialState: &agent.AgentState{
-			SystemPrompt:     "你是一个助手。一步一步完成任务。",
-			Model:            ollamaModel,
+			SystemPrompt: "你是一个助手。一步一步完成任务。",
+			Model:        ollamaModel,
 		},
 	})
 	cwd, err := os.Getwd()

@@ -120,7 +120,7 @@ func StreamProxy(model ai.Model, ctx ai.Context, opts ProxyStreamOptions) *ai.As
 		for scanner.Scan() {
 			select {
 			case <-opts.Ctx.Done():
-				pushProxyError(stream, partial, opts.Ctx.Err().Error(), ai.StopReasonAborted)
+				pushProxyError(stream, partial, opts.Ctx.Err().Error(), ai.StopReasonStop)
 				return
 			default:
 			}
@@ -149,7 +149,7 @@ func StreamProxy(model ai.Model, ctx ai.Context, opts ProxyStreamOptions) *ai.As
 
 		select {
 		case <-opts.Ctx.Done():
-			pushProxyError(stream, partial, opts.Ctx.Err().Error(), ai.StopReasonAborted)
+			pushProxyError(stream, partial, opts.Ctx.Err().Error(), ai.StopReasonStop)
 		default:
 			stream.End(partial)
 		}
@@ -174,10 +174,7 @@ func pushProxyError(stream *ai.AssistantMessageEventStream, partial *ai.Assistan
 func processProxyEvent(proxyEvent *ProxyAssistantMessageEvent, partial *ai.AssistantMessage) ai.AssistantMessageEvent {
 	switch proxyEvent.Type {
 	case ProxyAssistantMessageEventStart:
-		return &ai.AssistantMessageEventStart{
-			Type:    "start",
-			Partial: partial,
-		}
+		return ai.NewAssistantMessageEventStart(partial)
 
 	case ProxyAssistantMessageEventTextStart:
 		for len(partial.Content) <= proxyEvent.ContentIndex {
@@ -263,42 +260,38 @@ func processProxyEvent(proxyEvent *ProxyAssistantMessageEvent, partial *ai.Assis
 		for len(partial.Content) <= proxyEvent.ContentIndex {
 			partial.Content = append(partial.Content, nil)
 		}
-		partial.Content[proxyEvent.ContentIndex] = &ai.ToolCall{
-			Type:      "toolCall",
-			ID:        proxyEvent.ID,
-			Name:      proxyEvent.ToolName,
-			Arguments: &map[string]any{},
-		}
-		return &ai.AssistantMessageEventToolCallStart{
-			Type:         "toolcall_start",
-			ContentIndex: proxyEvent.ContentIndex,
-			Partial:      partial,
-		}
+		partial.Content[proxyEvent.ContentIndex] = ai.NewToolCallContentBlock(
+			proxyEvent.ID,
+			proxyEvent.ToolName,
+			map[string]any{},
+		)
+		return ai.NewAssistantMessageEventToolCallStart(
+			proxyEvent.ContentIndex,
+			partial,
+		)
 
 	case ProxyAssistantMessageEventToolCallDelta:
 		if proxyEvent.ContentIndex < len(partial.Content) {
-			if content, ok := partial.Content[proxyEvent.ContentIndex].(*ai.ToolCall); ok {
+			if content, ok := partial.Content[proxyEvent.ContentIndex].(*ai.ToolCallContentBlock); ok {
 				// 在实际代码中，我们应该保存 partialJson
 				// 这里我们只是简单地尝试解析
 				content.Arguments = parseStreamingJson(fmt.Sprintf("%v", content.Arguments) + proxyEvent.Delta)
-				return &ai.AssistantMessageEventToolCallDelta{
-					Type:         "toolcall_delta",
-					ContentIndex: proxyEvent.ContentIndex,
-					Delta:        proxyEvent.Delta,
-					Partial:      partial,
-				}
+				return ai.NewAssistantMessageEventToolCallDelta(
+					proxyEvent.ContentIndex,
+					proxyEvent.Delta,
+					partial,
+				)
 			}
 		}
 
 	case ProxyAssistantMessageEventToolCallEnd:
 		if proxyEvent.ContentIndex < len(partial.Content) {
-			if content, ok := partial.Content[proxyEvent.ContentIndex].(*ai.ToolCall); ok {
-				return &ai.AssistantMessageEventToolCallEnd{
-					Type:         "toolcall_end",
-					ContentIndex: proxyEvent.ContentIndex,
-					ToolCall:     content,
-					Partial:      partial,
-				}
+			if content, ok := partial.Content[proxyEvent.ContentIndex].(*ai.ToolCallContentBlock); ok {
+				return ai.NewAssistantMessageEventToolCallEnd(
+					proxyEvent.ContentIndex,
+					content,
+					partial,
+				)
 			}
 		}
 

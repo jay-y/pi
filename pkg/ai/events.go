@@ -2,178 +2,198 @@ package ai
 
 // AssistantMessageEvent 助手消息事件接口
 type AssistantMessageEvent interface {
-	GetType() string
 }
 
 // AssistantMessageEventStart 开始事件
 type AssistantMessageEventStart struct {
-	Type    string            `json:"type"`
-	Partial *AssistantMessage `json:"partial"`
+	Type    AssistantMessageEventType `json:"type"`
+	Partial *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventStart) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_START
+func NewAssistantMessageEventStart(partial *AssistantMessage) *AssistantMessageEventStart {
+	return &AssistantMessageEventStart{
+		Type:    AssistantMessageEventTypeStart,
+		Partial: partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventTextStart 文本开始事件
 type AssistantMessageEventTextStart struct {
-	Type         string            `json:"type"`
-	ContentIndex int               `json:"contentIndex"`
-	Partial      *AssistantMessage `json:"partial"`
+	Type         AssistantMessageEventType `json:"type"`
+	ContentIndex int                       `json:"contentIndex"`
+	Partial      *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventTextStart) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_TEXT_START
+func NewAssistantMessageEventTextStart(contentIndex int, partial *AssistantMessage) *AssistantMessageEventTextStart {
+	return &AssistantMessageEventTextStart{
+		Type:         AssistantMessageEventTypeTextStart,
+		ContentIndex: contentIndex,
+		Partial:      partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventTextDelta 文本增量事件
 type AssistantMessageEventTextDelta struct {
-	Type         string            `json:"type"`
-	ContentIndex int               `json:"contentIndex"`
-	Delta        string            `json:"delta"`
-	Partial      *AssistantMessage `json:"partial"`
+	Type         AssistantMessageEventType `json:"type"`
+	ContentIndex int                       `json:"contentIndex"`
+	Delta        string                    `json:"delta"`
+	Partial      *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventTextDelta) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_TEXT_DELTA
+func NewAssistantMessageEventTextDelta(contentIndex int, delta string, partial *AssistantMessage) *AssistantMessageEventTextDelta {
+	return &AssistantMessageEventTextDelta{
+		Type:         AssistantMessageEventTypeTextDelta,
+		ContentIndex: contentIndex,
+		Delta:        delta,
+		Partial:      partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventTextEnd 文本结束事件
 type AssistantMessageEventTextEnd struct {
-	Type         string            `json:"type"`
-	ContentIndex int               `json:"contentIndex"`
-	Content      string            `json:"content"`
-	Partial      *AssistantMessage `json:"partial"`
+	Type         AssistantMessageEventType `json:"type"`
+	ContentIndex int                       `json:"contentIndex"`
+	Content      string                    `json:"content"`
+	Partial      *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventTextEnd) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_TEXT_END
+func NewAssistantMessageEventTextEnd(contentIndex int, content string, partial *AssistantMessage) *AssistantMessageEventTextEnd {
+	return &AssistantMessageEventTextEnd{
+		Type:         AssistantMessageEventTypeTextEnd,
+		ContentIndex: contentIndex,
+		Content:      content,
+		Partial:      partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventThinkingStart 思考开始事件
 type AssistantMessageEventThinkingStart struct {
-	Type         string            `json:"type"`
-	ContentIndex int               `json:"contentIndex"`
-	Partial      *AssistantMessage `json:"partial"`
+	Type         AssistantMessageEventType `json:"type"`
+	ContentIndex int                       `json:"contentIndex"`
+	Partial      *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventThinkingStart) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_THINKING_START
+func (e *AssistantMessageEventThinkingStart) GetType() AssistantMessageEventType {
+	return e.Type
+}
+
+func NewAssistantMessageEventThinkingStart(contentIndex int, partial *AssistantMessage) *AssistantMessageEventThinkingStart {
+	return &AssistantMessageEventThinkingStart{
+		Type:         AssistantMessageEventTypeThinkingStart,
+		ContentIndex: contentIndex,
+		Partial:      partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventThinkingDelta 思考增量事件
 type AssistantMessageEventThinkingDelta struct {
-	Type         string            `json:"type"`
-	ContentIndex int               `json:"contentIndex"`
-	Delta        string            `json:"delta"`
-	Partial      *AssistantMessage `json:"partial"`
+	Type         AssistantMessageEventType `json:"type"`
+	ContentIndex int                       `json:"contentIndex"`
+	Delta        string                    `json:"delta"`
+	Partial      *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventThinkingDelta) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_THINKING_DELTA
+func NewAssistantMessageEventThinkingDelta(contentIndex int, delta string, partial *AssistantMessage) *AssistantMessageEventThinkingDelta {
+	return &AssistantMessageEventThinkingDelta{
+		Type:         AssistantMessageEventTypeThinkingDelta,
+		ContentIndex: contentIndex,
+		Delta:        delta,
+		Partial:      partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventThinkingEnd 思考结束事件
 type AssistantMessageEventThinkingEnd struct {
-	Type         string            `json:"type"`
-	ContentIndex int               `json:"contentIndex"`
-	Content      string            `json:"content"`
-	Partial      *AssistantMessage `json:"partial"`
+	Type         AssistantMessageEventType `json:"type"`
+	ContentIndex int                       `json:"contentIndex"`
+	Content      string                    `json:"content"`
+	Partial      *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventThinkingEnd) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_THINKING_END
+func NewAssistantMessageEventThinkingEnd(contentIndex int, content string, partial *AssistantMessage) *AssistantMessageEventThinkingEnd {
+	return &AssistantMessageEventThinkingEnd{
+		Type:         AssistantMessageEventTypeThinkingEnd,
+		ContentIndex: contentIndex,
+		Content:      content,
+		Partial:      partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventToolCallStart 工具调用开始事件
 type AssistantMessageEventToolCallStart struct {
-	Type         string            `json:"type"`
-	ContentIndex int               `json:"contentIndex"`
-	Partial      *AssistantMessage `json:"partial"`
+	Type         AssistantMessageEventType `json:"type"`
+	ContentIndex int                       `json:"contentIndex"`
+	Partial      *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventToolCallStart) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_TOOLCALL_START
+func NewAssistantMessageEventToolCallStart(contentIndex int, partial *AssistantMessage) *AssistantMessageEventToolCallStart {
+	return &AssistantMessageEventToolCallStart{
+		Type:         AssistantMessageEventTypeToolCallStart,
+		ContentIndex: contentIndex,
+		Partial:      partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventToolCallDelta 工具调用增量事件
 type AssistantMessageEventToolCallDelta struct {
-	Type         string            `json:"type"`
-	ContentIndex int               `json:"contentIndex"`
-	Delta        string            `json:"delta"`
-	Partial      *AssistantMessage `json:"partial"`
+	Type         AssistantMessageEventType `json:"type"`
+	ContentIndex int                       `json:"contentIndex"`
+	Delta        string                    `json:"delta"`
+	Partial      *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventToolCallDelta) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_TOOLCALL_DELTA
+func NewAssistantMessageEventToolCallDelta(contentIndex int, delta string, partial *AssistantMessage) *AssistantMessageEventToolCallDelta {
+	return &AssistantMessageEventToolCallDelta{
+		Type:         AssistantMessageEventTypeToolCallDelta,
+		ContentIndex: contentIndex,
+		Delta:        delta,
+		Partial:      partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventToolCallEnd 工具调用结束事件
 type AssistantMessageEventToolCallEnd struct {
-	Type         string            `json:"type"`
-	ContentIndex int               `json:"contentIndex"`
-	ToolCall     *ToolCall          `json:"toolCall"`
-	Partial      *AssistantMessage `json:"partial"`
+	Type         AssistantMessageEventType `json:"type"`
+	ContentIndex int                       `json:"contentIndex"`
+	ToolCall     *ToolCallContentBlock     `json:"toolCall"`
+	Partial      *AssistantMessage         `json:"partial"`
 }
 
-func (e *AssistantMessageEventToolCallEnd) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_TOOLCALL_END
+func NewAssistantMessageEventToolCallEnd(contentIndex int, toolCall *ToolCallContentBlock, partial *AssistantMessage) *AssistantMessageEventToolCallEnd {
+	return &AssistantMessageEventToolCallEnd{
+		Type:         AssistantMessageEventTypeToolCallEnd,
+		ContentIndex: contentIndex,
+		ToolCall:     toolCall,
+		Partial:      partial,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventDone 完成事件
 type AssistantMessageEventDone struct {
-	Type    string            `json:"type"`
-	Reason  StopReason        `json:"reason"`
-	Message *AssistantMessage `json:"message"`
+	Type    AssistantMessageEventType `json:"type"`
+	Reason  StopReason                `json:"reason"`
+	Message *AssistantMessage         `json:"message"`
 }
 
-func (e *AssistantMessageEventDone) GetType() string { 
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_DONE
+func NewAssistantMessageEventDone(reason StopReason, message *AssistantMessage) *AssistantMessageEventDone {
+	return &AssistantMessageEventDone{
+		Type:    AssistantMessageEventTypeDone,
+		Reason:  reason,
+		Message: message,
 	}
-	return e.Type 
 }
 
 // AssistantMessageEventError 错误事件
 type AssistantMessageEventError struct {
-	Type   string            `json:"type"`
-	Reason StopReason        `json:"reason"`
-	Error  *AssistantMessage `json:"error"`
+	Type   AssistantMessageEventType `json:"type"`
+	Reason StopReason                `json:"reason"`
+	Error  *AssistantMessage         `json:"error"`
 }
 
-func (e *AssistantMessageEventError) GetType() string {
-	if e.Type == "" {
-		e.Type = ASSISTANT_MESSAGE_EVENT_ERROR
+func NewAssistantMessageEventError(reason StopReason, error *AssistantMessage) *AssistantMessageEventError {
+	return &AssistantMessageEventError{
+		Type:   AssistantMessageEventTypeError,
+		Reason: reason,
+		Error:  error,
 	}
-	return e.Type 
 }

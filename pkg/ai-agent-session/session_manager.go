@@ -778,7 +778,7 @@ func (m *SessionManager) AppendThinkingLevelChange(thinkingLevel string) string 
 }
 
 // AppendThinkingLevelChangeFromLevel 从 ThinkingLevel 添加思考级别变化
-func (m *SessionManager) AppendThinkingLevelChangeFromLevel(thinkingLevel ThinkingLevel) string {
+func (m *SessionManager) AppendThinkingLevelChangeFromLevel(thinkingLevel ai.ThinkingLevel) string {
 	return m.AppendThinkingLevelChange(string(thinkingLevel))
 }
 
