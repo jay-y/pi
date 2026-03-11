@@ -163,7 +163,62 @@ func (p *OpenAICompletionsProvider) buildRequest(
 		req.Header.Set(k, v)
 	}
 
+	// 提供商特定 headers
+	p.applyProviderHeaders(model, ctx, req)
+
 	return req, nil
+}
+
+// applyProviderHeaders 应用提供商特定的 headers
+func (p *OpenAICompletionsProvider) applyProviderHeaders(model Model, ctx Context, req *http.Request) {
+	// GitHub Copilot 动态 headers
+	if model.GetProvider() == "github-copilot" {
+		p.applyGitHubCopilotHeaders(ctx, req)
+	}
+
+	// OpenRouter 缓存控制
+	if strings.Contains(model.GetBaseURL(), "openrouter.ai") {
+		p.applyOpenRouterHeaders(ctx, req)
+	}
+}
+
+// applyGitHubCopilotHeaders 应用 GitHub Copilot 动态 headers
+func (p *OpenAICompletionsProvider) applyGitHubCopilotHeaders(ctx Context, req *http.Request) {
+	// 检查是否有图片输入
+	hasImages := false
+	for _, msg := range ctx.Messages {
+		if userMsg, ok := msg.(*UserMessage); ok {
+			if blocks, ok := userMsg.Content.([]ContentBlock); ok {
+				for _, block := range blocks {
+					if block.GetType() == ContentBlockTypeImage {
+						hasImages = true
+						break
+					}
+				}
+			}
+		}
+		if hasImages {
+			break
+		}
+	}
+
+	// 设置 Copilot 特定的 headers
+	req.Header.Set("editor-version", "vscode/1.90.0")
+	req.Header.Set("editor-plugin-version", "copilot/1.200.0")
+
+	if hasImages {
+		req.Header.Set("copilot-vision-request", "true")
+	}
+}
+
+// applyOpenRouterHeaders 应用 OpenRouter 缓存控制 headers
+func (p *OpenAICompletionsProvider) applyOpenRouterHeaders(ctx Context, req *http.Request) {
+	// OpenRouter 支持 Anthropic 风格的缓存控制
+	// 在 system prompt 或最后一条消息上添加缓存控制
+	if ctx.SystemPrompt != "" {
+		// OpenRouter 通过 x-cache-key header 支持缓存
+		req.Header.Set("x-cache-key", "system-prompt")
+	}
 }
 
 // buildParams 构建请求参数
@@ -189,40 +244,143 @@ func (p *OpenAICompletionsProvider) buildParams(
 		params["temperature"] = *opts.Temperature
 	}
 
+	// 工具处理：如果有工具定义或对话历史中有工具使用
 	if len(ctx.Tools) > 0 {
 		params["tools"] = p.convertTools(ctx.Tools)
+	} else if p.hasToolHistory(ctx.Messages) {
+		// Anthropic 等提供商要求在有工具使用时必须包含 tools 参数
+		params["tools"] = []map[string]any{}
+	}
+
+	// 推理模型支持
+	if model.GetReasoning() {
+		// 检查是否支持 enable_thinking 参数（Z.ai/Qwen）
+		if p.supportsEnableThinking(model) {
+			params["enable_thinking"] = opts.ReasoningEffort != "" && opts.ReasoningEffort != "none"
+		} else if opts.ReasoningEffort != "" {
+			// OpenAI-style reasoning_effort
+			params["reasoning_effort"] = p.mapReasoningEffort(opts.ReasoningEffort)
+		}
 	}
 
 	return params
+}
+
+// hasToolHistory 检测对话中是否有工具使用
+func (p *OpenAICompletionsProvider) hasToolHistory(messages []Message) bool {
+	for _, msg := range messages {
+		if msg.GetRole() == "toolResult" {
+			return true
+		}
+		if msg.GetRole() == "assistant" {
+			if assistantMsg, ok := msg.(*AssistantMessage); ok {
+				for _, block := range assistantMsg.Content {
+					if block.GetType() == ContentBlockTypeToolCall {
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+// supportsEnableThinking 检查是否支持 enable_thinking 参数
+func (p *OpenAICompletionsProvider) supportsEnableThinking(model Model) bool {
+	// Z.ai 和 Qwen 使用 enable_thinking 参数
+	baseURL := model.GetBaseURL()
+	if strings.Contains(baseURL, "z.ai") || strings.Contains(baseURL, "zhipu") {
+		return true
+	}
+	if strings.Contains(baseURL, "qwen") {
+		return true
+	}
+	return false
+}
+
+// mapReasoningEffort 映射推理努力程度
+func (p *OpenAICompletionsProvider) mapReasoningEffort(effort string) string {
+	// OpenAI 标准映射
+	switch effort {
+	case "minimal":
+		return "minimal"
+	case "low":
+		return "low"
+	case "medium":
+		return "medium"
+	case "high":
+		return "high"
+	default:
+		return effort
+	}
 }
 
 // convertMessages 转换消息格式
 func (p *OpenAICompletionsProvider) convertMessages(model Model, ctx Context) []map[string]any {
 	var messages []map[string]any
 
+	// 系统提示词：推理模型使用 developer 角色
 	if ctx.SystemPrompt != "" {
+		role := "system"
+		if model.GetReasoning() && p.supportsDeveloperRole(model) {
+			role = "developer"
+		}
 		messages = append(messages, map[string]any{
-			"role":    "system",
+			"role":    role,
 			"content": ctx.SystemPrompt,
 		})
 	}
 
+	lastRole := ""
 	for _, msg := range ctx.Messages {
 		switch m := msg.(type) {
 		case *UserMessage:
-			messages = append(messages, p.convertUserMessage(m))
+			// 某些提供商不允许 user 消息紧跟在 tool result 后面
+			if p.requiresAssistantAfterToolResult(model) && lastRole == "toolResult" {
+				messages = append(messages, map[string]any{
+					"role":    "assistant",
+					"content": "I have processed the tool results.",
+				})
+			}
+			messages = append(messages, p.convertUserMessage(m, model))
+			lastRole = "user"
 		case *AssistantMessage:
 			messages = append(messages, p.convertAssistantMessage(m))
+			lastRole = "assistant"
 		case *ToolResultMessage:
 			messages = append(messages, p.convertToolResultMessage(m))
+			lastRole = "toolResult"
 		}
 	}
 
 	return messages
 }
 
+// supportsDeveloperRole 检查是否支持 developer 角色
+func (p *OpenAICompletionsProvider) supportsDeveloperRole(model Model) bool {
+	// OpenAI o1/o3 系列使用 developer 角色
+	baseURL := model.GetBaseURL()
+	if strings.Contains(baseURL, "openai.com") {
+		modelID := model.GetID()
+		if strings.HasPrefix(modelID, "o1") || strings.HasPrefix(modelID, "o3") {
+			return true
+		}
+	}
+	return false
+}
+
+// requiresAssistantAfterToolResult 检查是否需要在 tool result 后插入 assistant 消息
+func (p *OpenAICompletionsProvider) requiresAssistantAfterToolResult(model Model) bool {
+	// Anthropic 等提供商需要
+	baseURL := model.GetBaseURL()
+	if strings.Contains(baseURL, "anthropic") {
+		return true
+	}
+	return false
+}
+
 // convertUserMessage 转换用户消息
-func (p *OpenAICompletionsProvider) convertUserMessage(msg *UserMessage) map[string]any {
+func (p *OpenAICompletionsProvider) convertUserMessage(msg *UserMessage, model Model) map[string]any {
 	if content, ok := msg.Content.(string); ok {
 		return map[string]any{
 			"role":    "user",
@@ -240,6 +398,10 @@ func (p *OpenAICompletionsProvider) convertUserMessage(msg *UserMessage) map[str
 				"text": b.Text,
 			})
 		case *ImageContentBlock:
+			// 如果模型不支持图片，跳过
+			if !p.supportsImageInput(model) {
+				continue
+			}
 			contentParts = append(contentParts, map[string]any{
 				"type": "image_url",
 				"image_url": map[string]any{
@@ -249,10 +411,26 @@ func (p *OpenAICompletionsProvider) convertUserMessage(msg *UserMessage) map[str
 		}
 	}
 
+	// 如果没有内容，返回 nil
+	if len(contentParts) == 0 {
+		return nil
+	}
+
 	return map[string]any{
 		"role":    "user",
 		"content": contentParts,
 	}
+}
+
+// supportsImageInput 检查是否支持图片输入
+func (p *OpenAICompletionsProvider) supportsImageInput(model Model) bool {
+	input := model.GetInput()
+	for _, i := range input {
+		if i == "image" {
+			return true
+		}
+	}
+	return false
 }
 
 // convertAssistantMessage 转换助手消息
@@ -265,6 +443,9 @@ func (p *OpenAICompletionsProvider) convertAssistantMessage(msg *AssistantMessag
 		case *TextContentBlock:
 			content += b.Text
 		case *ToolCallContentBlock:
+			// 规范化 Tool call ID
+			normalizedID := p.normalizeToolCallID(b.ID)
+
 			// 将 Arguments 转换为 JSON 字符串
 			var argsJSON string
 			if b.Arguments != nil {
@@ -274,7 +455,7 @@ func (p *OpenAICompletionsProvider) convertAssistantMessage(msg *AssistantMessag
 			}
 
 			toolCalls = append(toolCalls, map[string]any{
-				"id":   b.ID,
+				"id":   normalizedID,
 				"type": "function",
 				"function": map[string]any{
 					"name":      b.Name,
@@ -285,11 +466,8 @@ func (p *OpenAICompletionsProvider) convertAssistantMessage(msg *AssistantMessag
 	}
 
 	result := map[string]any{
-		"role": "assistant",
-	}
-
-	if content != "" {
-		result["content"] = content
+		"role":    "assistant",
+		"content": content, // 始终设置 content，即使是空字符串
 	}
 
 	if len(toolCalls) > 0 {
@@ -297,6 +475,23 @@ func (p *OpenAICompletionsProvider) convertAssistantMessage(msg *AssistantMessag
 	}
 
 	return result
+}
+
+// normalizeToolCallID 规范化 Tool call ID
+func (p *OpenAICompletionsProvider) normalizeToolCallID(id string) string {
+	// 处理 OpenAI Responses API 的 pipe 分隔 ID
+	// 格式：{call_id}|{id}，其中 {id} 可能包含特殊字符
+	if strings.Contains(id, "|") {
+		parts := strings.Split(id, "|")
+		id = parts[0]
+	}
+
+	// OpenAI 限制 ID 长度为 40 字符
+	if len(id) > 40 {
+		id = id[:40]
+	}
+
+	return id
 }
 
 // convertToolResultMessage 转换工具结果消息
