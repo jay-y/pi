@@ -22,8 +22,8 @@ func NewOpenAICompletionsApiProvider() *OpenAICompletionsProvider {
 	}
 }
 
-func (p *OpenAICompletionsProvider) GetAPI() ModelApi {
-	return ModelApi(ApiOpenAICompletions)
+func (p *OpenAICompletionsProvider) GetAPI() string {
+	return ApiOpenAICompletions
 }
 
 // Stream 流式调用
@@ -50,7 +50,7 @@ func (p *OpenAICompletionsProvider) Stream(
 		}()
 
 		output := &AssistantMessage{
-			Role:       "assistant",
+			Role:       MessageRoleAssistant,
 			Content:    []ContentBlock{},
 			API:        model.GetAPI(),
 			Provider:   model.GetProvider(),
@@ -272,7 +272,7 @@ func (p *OpenAICompletionsProvider) hasToolHistory(messages []Message) bool {
 		if msg.GetRole() == "toolResult" {
 			return true
 		}
-		if msg.GetRole() == "assistant" {
+		if msg.GetRole() == MessageRoleAssistant {
 			if assistantMsg, ok := msg.(*AssistantMessage); ok {
 				for _, block := range assistantMsg.Content {
 					if block.GetType() == ContentBlockTypeToolCall {
@@ -338,15 +338,15 @@ func (p *OpenAICompletionsProvider) convertMessages(model Model, ctx Context) []
 			// 某些提供商不允许 user 消息紧跟在 tool result 后面
 			if p.requiresAssistantAfterToolResult(model) && lastRole == "toolResult" {
 				messages = append(messages, map[string]any{
-					"role":    "assistant",
+					"role":    MessageRoleAssistant,
 					"content": "I have processed the tool results.",
 				})
 			}
 			messages = append(messages, p.convertUserMessage(m, model))
-			lastRole = "user"
+			lastRole = MessageRoleUser
 		case *AssistantMessage:
 			messages = append(messages, p.convertAssistantMessage(m))
-			lastRole = "assistant"
+			lastRole = MessageRoleAssistant
 		case *ToolResultMessage:
 			messages = append(messages, p.convertToolResultMessage(m))
 			lastRole = "toolResult"
@@ -383,7 +383,7 @@ func (p *OpenAICompletionsProvider) requiresAssistantAfterToolResult(model Model
 func (p *OpenAICompletionsProvider) convertUserMessage(msg *UserMessage, model Model) map[string]any {
 	if content, ok := msg.Content.(string); ok {
 		return map[string]any{
-			"role":    "user",
+			"role":    MessageRoleUser,
 			"content": content,
 		}
 	}
@@ -417,7 +417,7 @@ func (p *OpenAICompletionsProvider) convertUserMessage(msg *UserMessage, model M
 	}
 
 	return map[string]any{
-		"role":    "user",
+		"role":    MessageRoleUser,
 		"content": contentParts,
 	}
 }
@@ -466,7 +466,7 @@ func (p *OpenAICompletionsProvider) convertAssistantMessage(msg *AssistantMessag
 	}
 
 	result := map[string]any{
-		"role":    "assistant",
+		"role":    MessageRoleAssistant,
 		"content": content, // 始终设置 content，即使是空字符串
 	}
 

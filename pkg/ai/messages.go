@@ -91,7 +91,7 @@ func NewToolCallContentBlock(id, name string, arguments map[string]any) *ToolCal
 // Message 消息接口
 type Message interface {
 	GetRole() string
-	ToMap() map[string]any
+	GetTimestamp() int64
 }
 
 // UserMessage 用户消息
@@ -105,18 +105,14 @@ func (u *UserMessage) GetRole() string {
 	return u.Role
 }
 
-func (u *UserMessage) ToMap() map[string]any {
-	return map[string]any{
-		"role":      u.Role,
-		"content":   u.Content,
-		"timestamp": u.Timestamp,
-	}
+func (u *UserMessage) GetTimestamp() int64 {
+	return u.Timestamp
 }
 
 // NewUserMessage 创建新的用户消息
 func NewUserMessage(content any) *UserMessage {
 	return &UserMessage{
-		Role:      "user",
+		Role:      MessageRoleUser,
 		Content:   content,
 		Timestamp: getCurrentTimestamp(),
 	}
@@ -126,8 +122,8 @@ func NewUserMessage(content any) *UserMessage {
 type AssistantMessage struct {
 	Role         string         `json:"role"`
 	Content      []ContentBlock `json:"content"`
-	API          ModelApi       `json:"api"`
-	Provider     ModelProvider  `json:"provider"`
+	API          string         `json:"api"`
+	Provider     string         `json:"provider"`
 	Model        string         `json:"model"`
 	Usage        Usage          `json:"usage"`
 	StopReason   StopReason     `json:"stopReason"`
@@ -139,24 +135,14 @@ func (a *AssistantMessage) GetRole() string {
 	return a.Role
 }
 
-func (a *AssistantMessage) ToMap() map[string]any {
-	return map[string]any{
-		"role":         a.Role,
-		"content":      a.Content,
-		"api":          a.API,
-		"provider":     a.Provider,
-		"model":        a.Model,
-		"usage":        a.Usage,
-		"stopReason":   a.StopReason,
-		"errorMessage": a.ErrorMessage,
-		"timestamp":    a.Timestamp,
-	}
+func (a *AssistantMessage) GetTimestamp() int64 {
+	return a.Timestamp
 }
 
 // NewAssistantMessage 创建新的助手消息
-func NewAssistantMessage(api ModelApi, provider ModelProvider, model string) *AssistantMessage {
+func NewAssistantMessage(api string, provider string, model string) *AssistantMessage {
 	return &AssistantMessage{
-		Role:       "assistant",
+		Role:       MessageRoleAssistant,
 		Content:    []ContentBlock{},
 		API:        api,
 		Provider:   provider,
@@ -181,22 +167,14 @@ func (t *ToolResultMessage) GetRole() string {
 	return t.Role
 }
 
-func (t *ToolResultMessage) ToMap() map[string]any {
-	return map[string]any{
-		"role":       t.Role,
-		"toolCallId": t.ToolCallID,
-		"toolName":   t.ToolName,
-		"content":    t.Content,
-		"details":    t.Details,
-		"isError":    t.IsError,
-		"timestamp":  t.Timestamp,
-	}
+func (t *ToolResultMessage) GetTimestamp() int64 {
+	return t.Timestamp
 }
 
 // NewToolResultMessage 创建新的工具结果消息
 func NewToolResultMessage(toolCallID, toolName string, content []ContentBlock, isError bool) *ToolResultMessage {
 	return &ToolResultMessage{
-		Role:       "toolResult",
+		Role:       MessageRoleToolResult,
 		ToolCallID: toolCallID,
 		ToolName:   toolName,
 		Content:    content,

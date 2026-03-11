@@ -26,8 +26,8 @@ func NewMockFailingProvider(maxFailures int) *MockFailingProvider {
 	}
 }
 
-func (p *MockFailingProvider) GetAPI() ai.ModelApi {
-	return ai.ModelApi("mock-failing")
+func (p *MockFailingProvider) GetAPI() string {
+	return "mock-failing"
 }
 
 func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options *ai.StreamOptions) *ai.AssistantMessageEventStream {
@@ -46,13 +46,13 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 				Type:   ai.AssistantMessageEventTypeError,
 				Reason: ai.StopReasonError,
 				Error: &ai.AssistantMessage{
-					Role:         "assistant",
+					Role:         ai.MessageRoleAssistant,
 					StopReason:   ai.StopReasonError,
 					ErrorMessage: errorMsg,
 				},
 			})
 			stream.End(&ai.AssistantMessage{
-				Role:         "assistant",
+				Role:         ai.MessageRoleAssistant,
 				StopReason:   ai.StopReasonError,
 				ErrorMessage: errorMsg,
 			})
@@ -63,14 +63,14 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 		stream.Push(&ai.AssistantMessageEventStart{
 			Type: ai.AssistantMessageEventTypeStart,
 			Partial: &ai.AssistantMessage{
-				Role: "assistant",
+				Role: ai.MessageRoleAssistant,
 			},
 		})
 
 		stream.Push(&ai.AssistantMessageEventTextStart{
 			Type: ai.AssistantMessageEventTypeTextStart,
 			Partial: &ai.AssistantMessage{
-				Role: "assistant",
+				Role: ai.MessageRoleAssistant,
 				Content: []ai.ContentBlock{
 					&ai.TextContentBlock{Type: "text", Text: ""},
 				},
@@ -81,7 +81,7 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 			Type:  ai.AssistantMessageEventTypeTextDelta,
 			Delta: "重试机制测试成功！",
 			Partial: &ai.AssistantMessage{
-				Role: "assistant",
+				Role: ai.MessageRoleAssistant,
 				Content: []ai.ContentBlock{
 					&ai.TextContentBlock{Type: "text", Text: "重试机制测试成功！"},
 				},
@@ -91,7 +91,7 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 		stream.Push(&ai.AssistantMessageEventTextEnd{
 			Type: ai.AssistantMessageEventTypeTextEnd,
 			Partial: &ai.AssistantMessage{
-				Role: "assistant",
+				Role: ai.MessageRoleAssistant,
 				Content: []ai.ContentBlock{
 					&ai.TextContentBlock{Type: "text", Text: "重试机制测试成功！"},
 				},
@@ -102,7 +102,7 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 			Type:   ai.AssistantMessageEventTypeDone,
 			Reason: ai.StopReasonStop,
 			Message: &ai.AssistantMessage{
-				Role:       "assistant",
+				Role:       ai.MessageRoleAssistant,
 				StopReason: ai.StopReasonStop,
 				Content: []ai.ContentBlock{
 					&ai.TextContentBlock{Type: "text", Text: "重试机制测试成功！"},
@@ -111,7 +111,7 @@ func (p *MockFailingProvider) Stream(model ai.Model, context ai.Context, options
 		})
 
 		stream.End(&ai.AssistantMessage{
-			Role:       "assistant",
+			Role:       ai.MessageRoleAssistant,
 			StopReason: ai.StopReasonStop,
 			Content: []ai.ContentBlock{
 				&ai.TextContentBlock{Type: "text", Text: "重试机制测试成功！"},
@@ -180,10 +180,10 @@ func main() {
 	ollamaModel := &ai.BaseModel{
 		ID:            "qwen3-coder-next:q8_0",
 		Name:          "ollama/qwen3-coder-next:q8_0",
-		API:           ai.ModelApi(ai.ApiOpenAICompletions),
+		API:           ai.ApiOpenAICompletions,
 		APIKey:        "ollama-local",
 		Headers:       nil,
-		Provider:      ai.ModelProvider("ollama"),
+		Provider:      "ollama",
 		BaseURL:       baseURL,
 		Reasoning:     true,
 		Input:         []string{"text"},

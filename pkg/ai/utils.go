@@ -9,7 +9,7 @@ import (
 )
 
 // GetEnvApiKey 从已知环境变量获取提供者的 API 密钥
-func GetEnvApiKey(provider ModelProvider) string {
+func GetEnvApiKey(provider string) string {
 	providerStr := string(provider)
 
 	switch providerStr {
@@ -74,24 +74,6 @@ func GetEnvApiKey(provider ModelProvider) string {
 	return ""
 }
 
-func CalculateCost(model Model, usage *Usage) Cost {
-	if usage == nil {
-		return Cost{
-			Input:      0,
-			Output:     0,
-			CacheRead:  0,
-			CacheWrite: 0,
-			Total:      0,
-		}
-	}
-	usage.Cost.Input = (model.GetCost().Input / 1000000) * float64(usage.Input)
-	usage.Cost.Output = (model.GetCost().Output / 1000000) * float64(usage.Output)
-	usage.Cost.CacheRead = (model.GetCost().CacheRead / 1000000) * float64(usage.CacheRead)
-	usage.Cost.CacheWrite = (model.GetCost().CacheWrite / 1000000) * float64(usage.CacheWrite)
-	usage.Cost.Total = usage.Cost.Input + usage.Cost.Output + usage.Cost.CacheRead + usage.Cost.CacheWrite
-	return usage.Cost
-}
-
 var (
 	cachedVertexAdcCredentialsExists *bool
 	vertexAdcMu                      sync.Once
@@ -137,20 +119,7 @@ func hasVertexAdcCredentials() bool {
 	return false
 }
 
-// getCurrentTimestamp 获取当前时间戳
+// getCurrentTimestamp 获取当前时间戳（毫秒）
 func getCurrentTimestamp() int64 {
-	return time.Now().Unix()
-}
-
-// contains 判断字符串是否包含子字符串
-func contains(s, substr string) bool {
-	if len(s) < len(substr) {
-		return false
-	}
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
+	return time.Now().UnixMilli()
 }

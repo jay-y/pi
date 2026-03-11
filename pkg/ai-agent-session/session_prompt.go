@@ -26,10 +26,10 @@ func (e *PromptError) Error() string {
 
 // PromptOptions 提示选项
 type PromptOptions struct {
-	ExpandPromptTemplates bool           `json:"expandPromptTemplates"`
+	ExpandPromptTemplates bool                   `json:"expandPromptTemplates"`
 	Images                []ai.ImageContentBlock `json:"images,omitempty"`
-	StreamingBehavior     string         `json:"streamingBehavior,omitempty"` // "steer" | "followUp"
-	Source                string         `json:"source,omitempty"`
+	StreamingBehavior     string                 `json:"streamingBehavior,omitempty"` // "steer" | "followUp"
+	Source                string                 `json:"source,omitempty"`
 }
 
 // SendMessageOptions 发送消息选项
@@ -95,7 +95,7 @@ func (s *AgentSession) Prompt(ctx context.Context, text string, options *PromptO
 	}
 
 	userMessage := &ai.UserMessage{
-		Role:      "user",
+		Role:      ai.MessageRoleUser,
 		Content:   userContent,
 		Timestamp: time.Now().UnixMilli(),
 	}
@@ -151,7 +151,7 @@ func (s *AgentSession) queueSteer(ctx context.Context, text string, images []ai.
 	}
 
 	message := &ai.UserMessage{
-		Role:      "user",
+		Role:      ai.MessageRoleUser,
 		Content:   content,
 		Timestamp: time.Now().UnixMilli(),
 	}
@@ -171,7 +171,7 @@ func (s *AgentSession) queueFollowUp(ctx context.Context, text string, images []
 	}
 
 	message := &ai.UserMessage{
-		Role:      "user",
+		Role:      ai.MessageRoleUser,
 		Content:   content,
 		Timestamp: time.Now().UnixMilli(),
 	}

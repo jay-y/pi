@@ -19,10 +19,10 @@ type StreamOptions struct {
 	MaxRetryDelayMs int               `json:"maxRetryDelayMs,omitempty"`
 	Metadata        map[string]any    `json:"metadata,omitempty"`
 	ReasoningEffort string            `json:"reasoningEffort,omitempty"`
-	Extra map[string]any `json:"-"`
+	Extra           map[string]any    `json:"-"`
 }
 
-func NewStreamOptions(apiKey string, headers map[string]string, maxTokens int, temperature *float64, reasoningEffort string)  *StreamOptions {
+func NewStreamOptions(apiKey string, headers map[string]string, maxTokens int, temperature *float64, reasoningEffort string) *StreamOptions {
 	return &StreamOptions{
 		APIKey:          apiKey,
 		Headers:         headers,

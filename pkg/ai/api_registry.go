@@ -21,19 +21,19 @@ type Context struct {
 
 // ApiProvider API 提供者接口
 type ApiProvider interface {
-	GetAPI() ModelApi
+	GetAPI() string
 	Stream(model Model, ctx Context, opts *StreamOptions) *AssistantMessageEventStream
 	StreamSimple(model Model, ctx Context, opts *SimpleStreamOptions) *AssistantMessageEventStream
 }
 
 // apiProvider 内部实现
 type apiProvider struct {
-	api          ModelApi
+	api          string
 	stream       func(Model, Context, *StreamOptions) *AssistantMessageEventStream
 	streamSimple func(Model, Context, *SimpleStreamOptions) *AssistantMessageEventStream
 }
 
-func (p *apiProvider) GetAPI() ModelApi { return p.api }
+func (p *apiProvider) GetAPI() string { return p.api }
 
 func (p *apiProvider) Stream(model Model, ctx Context, opts *StreamOptions) *AssistantMessageEventStream {
 	if model.GetAPI() != p.api {
@@ -51,7 +51,7 @@ func (p *apiProvider) StreamSimple(model Model, ctx Context, opts *SimpleStreamO
 
 // NewApiProvider 创建 API 提供者
 func NewApiProvider(
-	api ModelApi,
+	api string,
 	stream func(Model, Context, *StreamOptions) *AssistantMessageEventStream,
 	streamSimple func(Model, Context, *SimpleStreamOptions) *AssistantMessageEventStream,
 ) ApiProvider {
@@ -68,14 +68,14 @@ var _ ApiProvider = (*apiProvider)(nil)
 // ApiProviderRegistry 注册表
 type ApiProviderRegistry struct {
 	mu        sync.RWMutex
-	providers map[ModelApi]ApiProvider
-	sources   map[string][]ModelApi // sourceId -> apis
+	providers map[string]ApiProvider
+	sources   map[string][]string // sourceId -> apis
 }
 
 func NewApiProviderRegistry() *ApiProviderRegistry {
 	return &ApiProviderRegistry{
-		providers: make(map[ModelApi]ApiProvider),
-		sources:   make(map[string][]ModelApi),
+		providers: make(map[string]ApiProvider),
+		sources:   make(map[string][]string),
 	}
 }
 
@@ -90,7 +90,7 @@ func (r *ApiProviderRegistry) Register(provider ApiProvider, sourceID ...string)
 	}
 }
 
-func (r *ApiProviderRegistry) Get(api ModelApi) (ApiProvider, bool) {
+func (r *ApiProviderRegistry) Get(api string) (ApiProvider, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	p, ok := r.providers[api]
@@ -124,8 +124,8 @@ func (r *ApiProviderRegistry) Clear() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.providers = make(map[ModelApi]ApiProvider)
-	r.sources = make(map[string][]ModelApi)
+	r.providers = make(map[string]ApiProvider)
+	r.sources = make(map[string][]string)
 }
 
 var (
@@ -134,7 +134,7 @@ var (
 
 // RegisterBuiltInApiProviders 注册内置 API 提供者
 func RegisterBuiltInApiProviders() {
-	RegisterApiProvider(NewOpenAICompletionsApiProvider(), string(ApiOpenAICompletions))
+	RegisterApiProvider(NewOpenAICompletionsApiProvider(), ApiOpenAICompletions)
 }
 
 // RegisterApiProvider 注册 API 提供者
@@ -143,7 +143,7 @@ func RegisterApiProvider(provider ApiProvider, sourceID ...string) {
 }
 
 // GetApiProvider 获取 API 提供者
-func GetApiProvider(api ModelApi) (ApiProvider, bool) {
+func GetApiProvider(api string) (ApiProvider, bool) {
 	return apiProviderRegistry.Get(api)
 }
 
@@ -163,7 +163,7 @@ func ClearApiProviders() {
 }
 
 // ResolveApiProvider 解析 API 提供者
-func ResolveApiProvider(api ModelApi) (ApiProvider, error) {
+func ResolveApiProvider(api string) (ApiProvider, error) {
 	provider, ok := GetApiProvider(api)
 	if !ok {
 		return nil, fmt.Errorf("no API provider registered for api: %s", api)

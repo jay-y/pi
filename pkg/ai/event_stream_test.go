@@ -28,7 +28,7 @@ func TestEventStream(t *testing.T) {
 		stream.Push(NewAssistantMessageEventTextDelta(0, "Hi", nil))
 		stream.Push(NewAssistantMessageEventTextEnd(0, "Hi", nil))
 		stream.Push(NewAssistantMessageEventDone(StopReasonStop, &AssistantMessage{
-			Role:       "assistant",
+			Role:       MessageRoleAssistant,
 			StopReason: StopReasonStop,
 		}))
 

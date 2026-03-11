@@ -18,11 +18,11 @@ const CurrentSessionVersion = 3
 
 // SessionHeader 会话头部
 type SessionHeader struct {
-	Type         string `json:"type"`
-	Version      int    `json:"version,omitempty"`
-	ID           string `json:"id"`
-	Timestamp    string `json:"timestamp"`
-	Cwd          string `json:"cwd"`
+	Type          string `json:"type"`
+	Version       int    `json:"version,omitempty"`
+	ID            string `json:"id"`
+	Timestamp     string `json:"timestamp"`
+	Cwd           string `json:"cwd"`
 	ParentSession string `json:"parentSession,omitempty"`
 }
 
@@ -37,7 +37,7 @@ type SessionEntryBase struct {
 // SessionMessageEntry 消息条目
 type SessionMessageEntry struct {
 	SessionEntryBase
-	Message map[string]any `json:"message"`
+	Message ai.Message `json:"message"`
 }
 
 // ThinkingLevelChangeEntry 思考级别变化条目
@@ -105,8 +105,8 @@ type BranchSummaryEntry struct {
 // SessionContext 文件会话上下文（用于session-manager）
 type SessionContext struct {
 	Messages      []ai.Message `json:"messages"`
-	ThinkingLevel string              `json:"thinkingLevel"`
-	Model         *ModelInfo          `json:"model"`
+	ThinkingLevel string       `json:"thinkingLevel"`
+	Model         *ModelInfo   `json:"model"`
 }
 
 // NewSessionOptions 新会话选项
@@ -154,7 +154,7 @@ func (h *SessionHeader) GetType() string {
 
 // SessionTreeNode 会话树节点
 type SessionTreeNode struct {
-	Entry    SessionEntry       `json:"entry"`
+	Entry    SessionEntry      `json:"entry"`
 	Children []SessionTreeNode `json:"children"`
 	Label    *string           `json:"label,omitempty"`
 }
@@ -167,16 +167,16 @@ type ModelInfo struct {
 
 // SessionInfo 会话信息
 type SessionInfo struct {
-	Path            string    `json:"path"`
-	ID              string    `json:"id"`
-	Cwd             string    `json:"cwd"`
-	Name            *string   `json:"name,omitempty"`
-	ParentSessionPath string   `json:"parentSessionPath,omitempty"`
-	Created         time.Time `json:"created"`
-	Modified        time.Time `json:"modified"`
-	MessageCount    int       `json:"messageCount"`
-	FirstMessage    string    `json:"firstMessage"`
-	AllMessagesText string    `json:"allMessagesText"`
+	Path              string    `json:"path"`
+	ID                string    `json:"id"`
+	Cwd               string    `json:"cwd"`
+	Name              *string   `json:"name,omitempty"`
+	ParentSessionPath string    `json:"parentSessionPath,omitempty"`
+	Created           time.Time `json:"created"`
+	Modified          time.Time `json:"modified"`
+	MessageCount      int       `json:"messageCount"`
+	FirstMessage      string    `json:"firstMessage"`
+	AllMessagesText   string    `json:"allMessagesText"`
 }
 
 // SessionListProgress 会话列表进度回调
@@ -184,16 +184,16 @@ type SessionListProgress func(loaded, total int)
 
 // SessionManager 会话管理器
 type SessionManager struct {
-	sessionID    string
-	sessionFile  string
-	sessionDir   string
-	cwd          string
-	persist      bool
-	flushed      bool
-	fileEntries  []FileEntry
-	byID         map[string]SessionEntry
-	labelsByID   map[string]string
-	leafID       string
+	sessionID   string
+	sessionFile string
+	sessionDir  string
+	cwd         string
+	persist     bool
+	flushed     bool
+	fileEntries []FileEntry
+	byID        map[string]SessionEntry
+	labelsByID  map[string]string
+	leafID      string
 }
 
 // generateID 生成唯一ID
@@ -288,8 +288,8 @@ func migrateV2ToV3(entries []FileEntry) bool {
 	migrated := false
 	for _, entry := range entries {
 		if msgEntry, ok := entry.(*SessionMessageEntry); ok {
-			if msgEntry.Message["role"] == "hookMessage" {
-				msgEntry.Message["role"] = "custom"
+			if msgEntry.Message.GetRole() == "hookMessage" {
+				msgEntry.Message.(*CustomMessage).Role = "custom"
 				migrated = true
 			}
 		}
@@ -492,12 +492,12 @@ func newSessionManager(cwd, sessionDir, sessionFile string, persist bool) *Sessi
 	}
 
 	manager := &SessionManager{
-		cwd:          cwd,
-		sessionDir:   sessionDir,
-		persist:      persist,
-		byID:         make(map[string]SessionEntry),
-		labelsByID:   make(map[string]string),
-		fileEntries:  []FileEntry{},
+		cwd:         cwd,
+		sessionDir:  sessionDir,
+		persist:     persist,
+		byID:        make(map[string]SessionEntry),
+		labelsByID:  make(map[string]string),
+		fileEntries: []FileEntry{},
 	}
 
 	if sessionFile != "" {
@@ -569,11 +569,11 @@ func (m *SessionManager) newSession(options *NewSessionOptions) string {
 	timestamp := time.Now().Format(time.RFC3339)
 
 	header := &SessionHeader{
-		Type:         "session",
-		Version:      CurrentSessionVersion,
-		ID:           m.sessionID,
-		Timestamp:    timestamp,
-		Cwd:          m.cwd,
+		Type:          "session",
+		Version:       CurrentSessionVersion,
+		ID:            m.sessionID,
+		Timestamp:     timestamp,
+		Cwd:           m.cwd,
 		ParentSession: "",
 	}
 
@@ -663,7 +663,7 @@ func (m *SessionManager) _persist(entry SessionEntry) {
 	hasAssistant := false
 	for _, e := range m.fileEntries {
 		if msgEntry, ok := e.(*SessionMessageEntry); ok {
-			if msgEntry.Message["role"] == "assistant" {
+			if msgEntry.Message.GetRole() == ai.MessageRoleAssistant {
 				hasAssistant = true
 				break
 			}
@@ -745,19 +745,19 @@ func (m *SessionManager) AppendMessage(message ai.Message) string {
 			ParentID:  m.leafID,
 			Timestamp: time.Now().Format(time.RFC3339),
 		},
-		Message: message.ToMap(),
+		Message: message,
 	}
 
 	// 添加消息条目
 	m._appendEntry(entry)
-	
+
 	// 如果是助手消息，确保完全持久化
-	if message.GetRole() == "assistant" {
+	if message.GetRole() == ai.MessageRoleAssistant {
 		if m.persist && m.sessionFile != "" {
 			m._rewriteFile()
 		}
 	}
-	
+
 	return entry.ID
 }
 
@@ -1046,11 +1046,12 @@ func buildSessionContext(entries []SessionEntry, leafID string, byID map[string]
 				ModelID:  e.ModelID,
 			}
 		case *SessionMessageEntry:
-			if role, ok := e.Message["role"].(string); ok && role == "assistant" {
-				if provider, ok := e.Message["provider"].(string); ok {
-					if modelID, ok := e.Message["model"].(string); ok {
+			if e.Message.GetRole() == ai.MessageRoleAssistant {
+				msg := e.Message.(*ai.AssistantMessage)
+				if provider := msg.Provider; provider != "" {
+					if modelID := msg.Model; modelID != "" {
 						model = &ModelInfo{
-							Provider: provider,
+							Provider: string(provider),
 							ModelID:  modelID,
 						}
 					}
@@ -1067,28 +1068,26 @@ func buildSessionContext(entries []SessionEntry, leafID string, byID map[string]
 	appendMessage := func(entry SessionEntry) {
 		switch e := entry.(type) {
 		case *SessionMessageEntry:
-			// 尝试将map转换为Message
-			if msg, ok := convertMapToAIMessage(e.Message); ok {
-				messages = append(messages, msg)
-			}
+			messages = append(messages, e.Message)
 		case *CustomMessageEntry:
 			// 创建自定义消息
-			customMsg := &CustomMessage{
-				Role:      "custom",
-				CustomType: e.CustomType,
-				Content:    e.Content,
-				Display:    e.Display,
-				Details:    e.Details,
-			}
+			customMsg := NewCustomMessage(
+				ai.MessageRoleCustom,
+				e.CustomType,
+				e.Content,
+				e.Display,
+				e.Details,
+			)
 			messages = append(messages, customMsg)
 		case *BranchSummaryEntry:
 			// 创建分支摘要消息
-			branchMsg := &CustomMessage{
-				Role:      "system",
-				CustomType: "branch_summary",
-				Content:    e.Summary,
-				Display:    true,
-			}
+			branchMsg := NewCustomMessage(
+				ai.MessageRoleSystem,
+				"branch_summary",
+				e.Summary,
+				true,
+				nil,
+			)
 			messages = append(messages, branchMsg)
 		}
 	}
@@ -1096,7 +1095,7 @@ func buildSessionContext(entries []SessionEntry, leafID string, byID map[string]
 	if compaction != nil {
 		// 首先添加摘要
 		compactionMsg := &CustomMessage{
-			Role:      "system",
+			Role:       "system",
 			CustomType: "compaction_summary",
 			Content:    compaction.Summary,
 			Display:    true,
@@ -1140,50 +1139,6 @@ func buildSessionContext(entries []SessionEntry, leafID string, byID map[string]
 		Messages:      messages,
 		ThinkingLevel: thinkingLevel,
 		Model:         model,
-	}
-}
-
-// convertMapToAIMessage 将map转换为Message
-func convertMapToAIMessage(msgMap map[string]any) (ai.Message, bool) {
-	role, ok := msgMap["role"].(string)
-	if !ok {
-		return nil, false
-	}
-
-	switch role {
-	case "user":
-		content, ok := msgMap["content"].([]ai.ContentBlock)
-		if !ok {
-			return nil, false
-		}
-		return &ai.UserMessage{
-			Role:    role,
-			Content: content,
-		}, true
-	case "assistant":
-		content, ok := msgMap["content"].([]ai.ContentBlock)
-		if !ok {
-			return nil, false
-		}
-		return &ai.AssistantMessage{
-			Role:    role,
-			Content: content,
-		}, true
-	case "toolResult":
-		content, ok := msgMap["content"].([]ai.ContentBlock)
-		if !ok {
-			return nil, false
-		}
-		return &ai.ToolResultMessage{
-			Role:    role,
-			Content: content,
-		}, true
-	default:
-		content := msgMap["content"]
-		return &CustomMessage{
-			Role:    role,
-			Content: content,
-		}, true
 	}
 }
 
@@ -1304,9 +1259,9 @@ func (m *SessionManager) BranchWithSummary(branchFromID string, summary string, 
 			ParentID:  branchFromID,
 			Timestamp: time.Now().Format(time.RFC3339),
 		},
-		FromID:  branchFromID,
-		Summary: summary,
-		Details: details,
+		FromID:   branchFromID,
+		Summary:  summary,
+		Details:  details,
 		FromHook: fromHook,
 	}
 
@@ -1332,15 +1287,15 @@ func (m *SessionManager) CreateBranchedSession(leafID string) string {
 
 	newSessionID := uuid.New().String()
 	timestamp := time.Now().Format(time.RFC3339)
-	
+
 	newSessionFile := GetSessionFile(m.GetSessionDir(), newSessionID, timestamp)
 
 	header := &SessionHeader{
-		Type:         "session",
-		Version:      CurrentSessionVersion,
-		ID:           newSessionID,
-		Timestamp:    timestamp,
-		Cwd:          m.cwd,
+		Type:          "session",
+		Version:       CurrentSessionVersion,
+		ID:            newSessionID,
+		Timestamp:     timestamp,
+		Cwd:           m.cwd,
 		ParentSession: "",
 	}
 
@@ -1554,16 +1509,16 @@ func ForkFrom(sourcePath, targetCwd, sessionDir string) *SessionManager {
 	// 创建新会话文件
 	newSessionID := uuid.New().String()
 	timestamp := time.Now().Format(time.RFC3339)
-	
+
 	newSessionFile := GetSessionFile(dir, newSessionID, timestamp)
 
 	// 写入新头部
 	newHeader := &SessionHeader{
-		Type:         "session",
-		Version:      CurrentSessionVersion,
-		ID:           newSessionID,
-		Timestamp:    timestamp,
-		Cwd:          targetCwd,
+		Type:          "session",
+		Version:       CurrentSessionVersion,
+		ID:            newSessionID,
+		Timestamp:     timestamp,
+		Cwd:           targetCwd,
 		ParentSession: sourcePath,
 	}
 
@@ -1678,11 +1633,13 @@ func buildSessionInfo(filePath string) *SessionInfo {
 		if msgEntry, ok := entry.(*SessionMessageEntry); ok {
 			messageCount++
 
-			if msgEntry.Message["role"] == "user" || msgEntry.Message["role"] == "assistant" {
-				if content, ok := msgEntry.Message["content"].(string); ok {
-					allMessages = append(allMessages, content)
-					if firstMessage == "" && msgEntry.Message["role"] == "user" {
-						firstMessage = content
+			if msgEntry.Message.GetRole() == ai.MessageRoleUser || msgEntry.Message.GetRole() == ai.MessageRoleAssistant {
+				if me, ok := msgEntry.Message.(*ai.UserMessage); ok {
+					if content, ok := me.Content.(string); ok {
+						allMessages = append(allMessages, content)
+						if firstMessage == "" {
+							firstMessage = content
+						}
 					}
 				}
 			}
@@ -1700,16 +1657,16 @@ func buildSessionInfo(filePath string) *SessionInfo {
 	}
 
 	return &SessionInfo{
-		Path:            filePath,
-		ID:              header.ID,
-		Cwd:             cwd,
-		Name:            name,
+		Path:              filePath,
+		ID:                header.ID,
+		Cwd:               cwd,
+		Name:              name,
 		ParentSessionPath: parentSessionPath,
-		Created:         created,
-		Modified:        modified,
-		MessageCount:    messageCount,
-		FirstMessage:    firstMessage,
-		AllMessagesText: strings.Join(allMessages, " "),
+		Created:           created,
+		Modified:          modified,
+		MessageCount:      messageCount,
+		FirstMessage:      firstMessage,
+		AllMessagesText:   strings.Join(allMessages, " "),
 	}
 }
 
@@ -1719,10 +1676,10 @@ func getSessionModifiedDate(entries []FileEntry, header *SessionHeader, statsMti
 
 	for _, entry := range entries {
 		if msgEntry, ok := entry.(*SessionMessageEntry); ok {
-			if msgEntry.Message["role"] == "user" || msgEntry.Message["role"] == "assistant" {
+			if msgEntry.Message.GetRole() == ai.MessageRoleUser || msgEntry.Message.GetRole() == ai.MessageRoleAssistant {
 				// 尝试从消息中获取时间戳
-				if timestamp, ok := msgEntry.Message["timestamp"].(float64); ok {
-					t := time.Unix(int64(timestamp/1000), int64((timestamp-float64(int64(timestamp)))*1000000))
+				if timestamp := msgEntry.Message.GetTimestamp(); timestamp != 0 {
+					t := time.Unix(int64(timestamp/1000), int64(timestamp%1000))
 					if t.After(lastActivityTime) {
 						lastActivityTime = t
 					}

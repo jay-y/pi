@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jay-y/pi/pkg/ai"
 	"gopkg.in/yaml.v3"
 )
 
@@ -25,10 +26,10 @@ type CollisionInfo struct {
 
 // ResourceDiagnostic 资源诊断信息
 type ResourceDiagnostic struct {
-	Type      string            `json:"type"`                // "warning", "collision"
-	Message   string            `json:"message"`
-	Path      string            `json:"path,omitempty"`
-	Collision *CollisionInfo    `json:"collision,omitempty"`
+	Type      string         `json:"type"` // "warning", "collision"
+	Message   string         `json:"message"`
+	Path      string         `json:"path,omitempty"`
+	Collision *CollisionInfo `json:"collision,omitempty"`
 }
 
 // PromptsResult 提示模板结果
@@ -60,7 +61,7 @@ type AgentsFilesResult struct {
 // PathMetadata 路径元数据
 type PathMetadata struct {
 	Source string `json:"source"` // "local", "cli", "auto"
-	Scope  string `json:"scope"`  // "user", "project", "temporary"
+	Scope  string `json:"scope"`  // MessageRoleUser, "project", "temporary"
 	Origin string `json:"origin"` // "top-level", "package"
 }
 
@@ -104,45 +105,45 @@ type ResourceLoader interface {
 
 // DefaultResourceLoader 默认资源加载器实现
 type DefaultResourceLoader struct {
-	cwd                        string
-	agentDir                   string
-	settingsManager            *SettingsManager
-	additionalSkillPaths       []string
-	additionalPromptPaths      []string
-	additionalThemePaths       []string
-	systemPromptSource         string
-	appendSystemPromptSource   string
-	noSkills                   bool
-	noPromptTemplates          bool
-	noThemes                   bool
+	cwd                      string
+	agentDir                 string
+	settingsManager          *SettingsManager
+	additionalSkillPaths     []string
+	additionalPromptPaths    []string
+	additionalThemePaths     []string
+	systemPromptSource       string
+	appendSystemPromptSource string
+	noSkills                 bool
+	noPromptTemplates        bool
+	noThemes                 bool
 
-	skills              []SkillInfo
-	skillDiagnostics    []ResourceDiagnostic
-	prompts             []PromptTemplate
-	promptDiagnostics   []ResourceDiagnostic
-	themes              []Theme
-	themeDiagnostics    []ResourceDiagnostic
-	agentsFiles         []AgentsFile
-	systemPrompt        string
-	appendSystemPrompt  []string
-	pathMetadata        map[string]PathMetadata
+	skills             []SkillInfo
+	skillDiagnostics   []ResourceDiagnostic
+	prompts            []PromptTemplate
+	promptDiagnostics  []ResourceDiagnostic
+	themes             []Theme
+	themeDiagnostics   []ResourceDiagnostic
+	agentsFiles        []AgentsFile
+	systemPrompt       string
+	appendSystemPrompt []string
+	pathMetadata       map[string]PathMetadata
 
 	mu sync.RWMutex
 }
 
 // DefaultResourceLoaderOptions 默认资源加载器选项
 type DefaultResourceLoaderOptions struct {
-	Cwd                      string
-	AgentDir                 string
-	SettingsManager          *SettingsManager
-	AdditionalSkillPaths     []string
-	AdditionalPromptPaths    []string
-	AdditionalThemePaths     []string
-	SystemPrompt             string
-	AppendSystemPrompt       string
-	NoSkills                 bool
-	NoPromptTemplates        bool
-	NoThemes                 bool
+	Cwd                   string
+	AgentDir              string
+	SettingsManager       *SettingsManager
+	AdditionalSkillPaths  []string
+	AdditionalPromptPaths []string
+	AdditionalThemePaths  []string
+	SystemPrompt          string
+	AppendSystemPrompt    string
+	NoSkills              bool
+	NoPromptTemplates     bool
+	NoThemes              bool
 }
 
 // NewDefaultResourceLoader 创建默认资源加载器
@@ -680,7 +681,7 @@ func (rl *DefaultResourceLoader) loadPromptFromFile(filePath string) *PromptTemp
 // determineSource 确定资源的来源
 func (rl *DefaultResourceLoader) determineSource(filePath string) string {
 	if strings.HasPrefix(filePath, rl.agentDir) {
-		return "user"
+		return ai.MessageRoleUser
 	}
 	if strings.HasPrefix(filePath, rl.cwd) {
 		return "project"

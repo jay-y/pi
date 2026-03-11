@@ -15,15 +15,17 @@ func (c *CustomMessage) GetRole() string {
 	return c.Role
 }
 
-// ToMap 实现 Message 接口
-func (c *CustomMessage) ToMap() map[string]any {
-	return map[string]any{
-		"role": c.Role,
-		"customType": c.CustomType,
-		"content": c.Content,
-		"display": c.Display,
-		"details": c.Details,
-		"timestamp": c.Timestamp,
+func (c *CustomMessage) GetTimestamp() int64 {
+	return c.Timestamp
+}
+
+func NewCustomMessage(role string, customType string, content interface{}, display bool, details interface{}) *CustomMessage {
+	return &CustomMessage{
+		Role:       role,
+		CustomType: customType,
+		Content:    content,
+		Display:    display,
+		Details:    details,
 	}
 }
 
@@ -46,18 +48,22 @@ func (m *BashExecutionMessage) GetRole() string {
 	return m.Role
 }
 
+func (m *BashExecutionMessage) GetTimestamp() int64 {
+	return m.Timestamp
+}
+
 // ToMap 实现 Message 接口
 func (m *BashExecutionMessage) ToMap() map[string]any {
 	return map[string]any{
-		"role": m.Role,
-		"type": m.Type,
-		"command": m.Command,
-		"output": m.Output,
-		"exitCode": m.ExitCode,
-		"cancelled": m.Cancelled,
-		"truncated": m.Truncated,
-		"fullOutputPath": m.FullOutputPath,
+		"role":               m.Role,
+		"type":               m.Type,
+		"command":            m.Command,
+		"output":             m.Output,
+		"exitCode":           m.ExitCode,
+		"cancelled":          m.Cancelled,
+		"truncated":          m.Truncated,
+		"fullOutputPath":     m.FullOutputPath,
 		"excludeFromContext": m.ExcludeFromContext,
-		"timestamp": m.Timestamp,
+		"timestamp":          m.Timestamp,
 	}
 }

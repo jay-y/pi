@@ -1,46 +1,44 @@
 package ai
 
 // ModelApi 调用的 API 接口
-type ModelApi string
 
 const (
-	ApiOpenAICompletions     ModelApi = "openai-completions"
-	ApiOpenAIResponses       ModelApi = "openai-responses"
-	ApiAzureOpenAIResponses  ModelApi = "azure-openai-responses"
-	ApiOpenAICodexResponses  ModelApi = "openai-codex-responses"
-	ApiAnthropicMessages     ModelApi = "anthropic-messages"
-	ApiBedrockConverseStream ModelApi = "bedrock-converse-stream"
-	ApiGoogleGenerativeAI    ModelApi = "google-generative-ai"
-	ApiGoogleGeminiCLI       ModelApi = "google-gemini-cli"
-	ApiGoogleVertex          ModelApi = "google-vertex"
+	ApiOpenAICompletions     string = "openai-completions"
+	ApiOpenAIResponses       string = "openai-responses"
+	ApiAzureOpenAIResponses  string = "azure-openai-responses"
+	ApiOpenAICodexResponses  string = "openai-codex-responses"
+	ApiAnthropicMessages     string = "anthropic-messages"
+	ApiBedrockConverseStream string = "bedrock-converse-stream"
+	ApiGoogleGenerativeAI    string = "google-generative-ai"
+	ApiGoogleGeminiCLI       string = "google-gemini-cli"
+	ApiGoogleVertex          string = "google-vertex"
 )
 
 // ModelProvider 模型供应商
-type ModelProvider string
 
 const (
-	ProviderAmazonBedrock        ModelProvider = "amazon-bedrock"
-	ProviderAnthropic            ModelProvider = "anthropic"
-	ProviderGoogle               ModelProvider = "google"
-	ProviderGoogleGeminiCLI      ModelProvider = "google-gemini-cli"
-	ProviderGoogleAntigravity    ModelProvider = "google-antigravity"
-	ProviderGoogleVertex         ModelProvider = "google-vertex"
-	ProviderOpenAI               ModelProvider = "openai"
-	ProviderAzureOpenAIResponses ModelProvider = "azure-openai-responses"
-	ProviderOpenAICodex          ModelProvider = "openai-codex"
-	ProviderGitHubCopilot        ModelProvider = "github-copilot"
-	ProviderXAI                  ModelProvider = "xai"
-	ProviderGroq                 ModelProvider = "groq"
-	ProviderCerebras             ModelProvider = "cerebras"
-	ProviderOpenRouter           ModelProvider = "openrouter"
-	ProviderVercelAIGateway      ModelProvider = "vercel-ai-gateway"
-	ProviderZAI                  ModelProvider = "zai"
-	ProviderMistral              ModelProvider = "mistral"
-	ProviderMinimax              ModelProvider = "minimax"
-	ProviderMinimaxCN            ModelProvider = "minimax-cn"
-	ProviderHuggingFace          ModelProvider = "huggingface"
-	ProviderOpenCode             ModelProvider = "opencode"
-	ProviderKimiCoding           ModelProvider = "kimi-coding"
+	ProviderAmazonBedrock        string = "amazon-bedrock"
+	ProviderAnthropic            string = "anthropic"
+	ProviderGoogle               string = "google"
+	ProviderGoogleGeminiCLI      string = "google-gemini-cli"
+	ProviderGoogleAntigravity    string = "google-antigravity"
+	ProviderGoogleVertex         string = "google-vertex"
+	ProviderOpenAI               string = "openai"
+	ProviderAzureOpenAIResponses string = "azure-openai-responses"
+	ProviderOpenAICodex          string = "openai-codex"
+	ProviderGitHubCopilot        string = "github-copilot"
+	ProviderXAI                  string = "xai"
+	ProviderGroq                 string = "groq"
+	ProviderCerebras             string = "cerebras"
+	ProviderOpenRouter           string = "openrouter"
+	ProviderVercelAIGateway      string = "vercel-ai-gateway"
+	ProviderZAI                  string = "zai"
+	ProviderMistral              string = "mistral"
+	ProviderMinimax              string = "minimax"
+	ProviderMinimaxCN            string = "minimax-cn"
+	ProviderHuggingFace          string = "huggingface"
+	ProviderOpenCode             string = "opencode"
+	ProviderKimiCoding           string = "kimi-coding"
 )
 
 // ThinkingLevel 思考级别
@@ -129,4 +127,14 @@ const (
 	ContentBlockTypeThinking ContentBlockType = "thinking"
 	ContentBlockTypeToolCall ContentBlockType = "toolCall"
 	ContentBlockTypeImage    ContentBlockType = "image"
+)
+
+// MessageRole 消息角色
+
+const (
+	MessageRoleUser       string = "user"
+	MessageRoleAssistant  string = "assistant"
+	MessageRoleSystem     string = "system"
+	MessageRoleCustom     string = "custom"
+	MessageRoleToolResult string = "toolResult"
 )

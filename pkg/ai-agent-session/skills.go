@@ -20,25 +20,25 @@ var IgnoreFileNames = []string{".gitignore", ".ignore", ".fdignore"}
 
 // SkillsResult 技能结果
 type SkillsResult struct {
-	Skills      []SkillInfo        `json:"skills"`
+	Skills      []SkillInfo          `json:"skills"`
 	Diagnostics []ResourceDiagnostic `json:"diagnostics,omitempty"`
 }
 
 // SkillInfo 技能信息
 type SkillInfo struct {
-	Name                 string `json:"name"`
-	Description          string `json:"description"`
-	FilePath             string `json:"filePath"`
-	BaseDir              string `json:"baseDir"`
-	Source               string `json:"source"`
-	DisableModelInvocation bool  `json:"disableModelInvocation"`
+	Name                   string `json:"name"`
+	Description            string `json:"description"`
+	FilePath               string `json:"filePath"`
+	BaseDir                string `json:"baseDir"`
+	Source                 string `json:"source"`
+	DisableModelInvocation bool   `json:"disableModelInvocation"`
 }
 
 // SkillFrontmatter 技能前置元数据
 type SkillFrontmatter struct {
-	Name                 string `json:"name,omitempty"`
-	Description          string `json:"description,omitempty"`
-	DisableModelInvocation bool  `json:"disable-model-invocation,omitempty"`
+	Name                   string `json:"name,omitempty"`
+	Description            string `json:"description,omitempty"`
+	DisableModelInvocation bool   `json:"disable-model-invocation,omitempty"`
 }
 
 // LoadSkillsResult 加载技能结果
@@ -207,11 +207,11 @@ func loadSkillFromFile(filePath string, source string) loadSkillFromFileResult {
 
 	return loadSkillFromFileResult{
 		Skill: &SkillInfo{
-			Name:                 name,
-			Description:          frontmatter.Description,
-			FilePath:             filePath,
-			BaseDir:              skillDir,
-			Source:               source,
+			Name:                   name,
+			Description:            frontmatter.Description,
+			FilePath:               filePath,
+			BaseDir:                skillDir,
+			Source:                 source,
 			DisableModelInvocation: frontmatter.DisableModelInvocation,
 		},
 		Diagnostics: diagnostics,
@@ -492,8 +492,8 @@ func toPosixPath(p string) string {
 
 // IgnoreMatcher 忽略匹配器
 type IgnoreMatcher struct {
-	patterns   []string
-	negations  []string
+	patterns  []string
+	negations []string
 }
 
 // NewIgnoreMatcher 创建新的忽略匹配器
@@ -523,7 +523,7 @@ func (ig *IgnoreMatcher) Ignores(path string) bool {
 			return false
 		}
 	}
-	
+
 	// 检查正向规则
 	for _, pattern := range ig.patterns {
 		if matchIgnorePattern(path, pattern) {
@@ -550,7 +550,7 @@ func matchIgnorePattern(path string, pattern string) bool {
 			return true
 		}
 	}
-	
+
 	// 处理 * 通配符
 	if strings.Contains(pattern, "*") {
 		regexPattern := "^" + strings.ReplaceAll(
@@ -560,12 +560,12 @@ func matchIgnorePattern(path string, pattern string) bool {
 		matched, _ := regexp.MatchString(regexPattern, path)
 		return matched
 	}
-	
+
 	// 处理目录前缀匹配
 	if strings.HasSuffix(pattern, "/") {
 		return strings.HasPrefix(path+"/", pattern)
 	}
-	
+
 	// 精确匹配或前缀匹配
 	return path == pattern || strings.HasPrefix(path, pattern+"/")
 }
@@ -640,7 +640,7 @@ func prefixIgnorePattern(line string, prefix string) string {
 // parseFrontmatter 解析前置元数据
 func parseFrontmatter(content string) (SkillFrontmatter, string) {
 	lines := strings.Split(content, "\n")
-	
+
 	if len(lines) == 0 {
 		return SkillFrontmatter{}, content
 	}
@@ -679,7 +679,7 @@ func parseFrontmatter(content string) (SkillFrontmatter, string) {
 			if len(parts) == 2 {
 				key := strings.TrimSpace(parts[0])
 				value := strings.TrimSpace(parts[1])
-				
+
 				// Remove quotes if present
 				if strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"") {
 					value = value[1 : len(value)-1]
@@ -722,9 +722,9 @@ func ParseSkillBlock(text string) *ParsedSkillBlock {
 	}
 	userMessage := strings.Trim(matches[4], " ")
 	return &ParsedSkillBlock{
-		Name:       matches[1],
-		Location:   matches[2],
-		Content:    matches[3],
+		Name:        matches[1],
+		Location:    matches[2],
+		Content:     matches[3],
 		UserMessage: userMessage,
 	}
 }

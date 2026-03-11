@@ -282,7 +282,7 @@ func (s *AgentSession) processAgentEvent(event agent.AgentEvent) {
 
 // getUserMessageText 提取用户消息文本
 func (s *AgentSession) getUserMessageText(message ai.Message) string {
-	if message.GetRole() != "user" {
+	if message.GetRole() != ai.MessageRoleUser {
 		return ""
 	}
 
@@ -927,8 +927,8 @@ func (s *AgentSession) Fork(ctx context.Context, entryId string) (*ForkResult, e
 		return nil, errors.New("invalid entry type for forking")
 	}
 
-	role, _ := msgEntry.Message["role"].(string)
-	if role != "user" {
+	role := msgEntry.Message.GetRole()
+	if role != ai.MessageRoleUser {
 		return nil, errors.New("can only fork from user messages")
 	}
 
@@ -960,33 +960,33 @@ func (s *AgentSession) Fork(ctx context.Context, entryId string) (*ForkResult, e
 }
 
 // extractUserMessageText 提取用户消息文本
-func (s *AgentSession) extractUserMessageText(msgMap map[string]any) string {
-	content, ok := msgMap["content"]
-	if !ok {
-		return ""
-	}
-
-	switch c := content.(type) {
-	case string:
-		return c
-	case []ai.ContentBlock:
-		var text string
-		for _, block := range c {
-			if tc, ok := block.(*ai.TextContentBlock); ok {
-				text += tc.Text
-			}
+func (s *AgentSession) extractUserMessageText(msg ai.Message) string {
+	if currentMsg, ok := msg.(*ai.UserMessage); ok {
+		if currentMsg.Content == nil {
+			return ""
 		}
-		return text
-	case []interface{}:
-		var text string
-		for _, item := range c {
-			if m, ok := item.(map[string]interface{}); ok {
-				if t, ok := m["text"].(string); ok {
-					text += t
+		switch c := currentMsg.Content.(type) {
+		case string:
+			return c
+		case []ai.ContentBlock:
+			var text string
+			for _, block := range c {
+				if tc, ok := block.(*ai.TextContentBlock); ok {
+					text += tc.Text
 				}
 			}
+			return text
+		case []interface{}:
+			var text string
+			for _, item := range c {
+				if m, ok := item.(map[string]interface{}); ok {
+					if t, ok := m["text"].(string); ok {
+						text += t
+					}
+				}
+			}
+			return text
 		}
-		return text
 	}
 	return ""
 }
@@ -1016,8 +1016,8 @@ func (s *AgentSession) NavigateTree(ctx context.Context, options *NavigateTreeOp
 	var editorText string
 
 	if msgEntry, ok := targetEntry.(*SessionMessageEntry); ok {
-		role, _ := msgEntry.Message["role"].(string)
-		if role == "user" {
+		role := msgEntry.Message.GetRole()
+		if role == ai.MessageRoleUser {
 			editorText = s.extractUserMessageText(msgEntry.Message)
 			s.sessionManager.Branch(targetEntry.GetParentID())
 		} else {
@@ -1065,8 +1065,8 @@ func (s *AgentSession) GetUserMessagesForForking() []ForkableMessage {
 			continue
 		}
 
-		role, _ := msgEntry.Message["role"].(string)
-		if role != "user" {
+		role := msgEntry.Message.GetRole()
+		if role != ai.MessageRoleUser {
 			continue
 		}
 

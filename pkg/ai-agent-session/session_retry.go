@@ -97,7 +97,7 @@ func (s *AgentSession) handleRetryableError(msg *ai.AssistantMessage) bool {
 
 	// 从 agent state 中移除错误消息
 	messages := s.agent.GetState().Messages
-	if len(messages) > 0 && messages[len(messages)-1].GetRole() == "assistant" {
+	if len(messages) > 0 && messages[len(messages)-1].GetRole() == ai.MessageRoleAssistant {
 		s.agent.ReplaceMessages(messages[:len(messages)-1])
 	}
 

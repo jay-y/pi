@@ -57,7 +57,7 @@ func StreamProxy(model ai.Model, ctx ai.Context, opts ProxyStreamOptions) *ai.As
 
 	go func() {
 		partial := &ai.AssistantMessage{
-			Role:       "assistant",
+			Role:       ai.MessageRoleAssistant,
 			StopReason: ai.StopReasonStop,
 			Content:    []ai.ContentBlock{},
 			API:        model.GetAPI(),
