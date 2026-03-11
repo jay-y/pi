@@ -8,71 +8,8 @@ import (
 	"time"
 )
 
-// getCurrentTimestamp 获取当前时间戳
-func getCurrentTimestamp() int64 {
-	return time.Now().Unix()
-}
-
-// contains 判断字符串是否包含子字符串
-func contains(s, substr string) bool {
-	if len(s) < len(substr) {
-		return false
-	}
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
-
-var (
-	cachedVertexAdcCredentialsExists *bool
-	vertexAdcMu                       sync.Once
-)
-
-// hasVertexAdcCredentials 检查是否存在 Vertex ADC 凭据
-func hasVertexAdcCredentials() bool {
-	vertexAdcMu.Do(func() {
-		// 首先检查 GOOGLE_APPLICATION_CREDENTIALS 环境变量
-		gacPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-		if gacPath != "" {
-			if _, err := os.Stat(gacPath); err == nil {
-				val := true
-				cachedVertexAdcCredentialsExists = &val
-				return
-			}
-		}
-
-		// 回退到默认 ADC 路径
-		var homeDir string
-		if runtime.GOOS == "windows" {
-			homeDir = os.Getenv("USERPROFILE")
-		} else {
-			homeDir = os.Getenv("HOME")
-		}
-
-		if homeDir != "" {
-			adcPath := filepath.Join(homeDir, ".config", "gcloud", "application_default_credentials.json")
-			if _, err := os.Stat(adcPath); err == nil {
-				val := true
-				cachedVertexAdcCredentialsExists = &val
-				return
-			}
-		}
-
-		val := false
-		cachedVertexAdcCredentialsExists = &val
-	})
-
-	if cachedVertexAdcCredentialsExists != nil {
-		return *cachedVertexAdcCredentialsExists
-	}
-	return false
-}
-
-// getEnvApiKey 从已知环境变量获取提供者的 API 密钥
-func getEnvApiKey(provider ModelProvider) string {
+// GetEnvApiKey 从已知环境变量获取提供者的 API 密钥
+func GetEnvApiKey(provider ModelProvider) string {
 	providerStr := string(provider)
 
 	switch providerStr {
@@ -137,14 +74,14 @@ func getEnvApiKey(provider ModelProvider) string {
 	return ""
 }
 
-func calculateCost(model Model, usage *Usage) Cost {
+func CalculateCost(model Model, usage *Usage) Cost {
 	if usage == nil {
 		return Cost{
-			Input: 0,
-			Output: 0,
-			CacheRead: 0,
+			Input:      0,
+			Output:     0,
+			CacheRead:  0,
 			CacheWrite: 0,
-			Total: 0,
+			Total:      0,
 		}
 	}
 	usage.Cost.Input = (model.GetCost().Input / 1000000) * float64(usage.Input)
@@ -153,4 +90,67 @@ func calculateCost(model Model, usage *Usage) Cost {
 	usage.Cost.CacheWrite = (model.GetCost().CacheWrite / 1000000) * float64(usage.CacheWrite)
 	usage.Cost.Total = usage.Cost.Input + usage.Cost.Output + usage.Cost.CacheRead + usage.Cost.CacheWrite
 	return usage.Cost
+}
+
+var (
+	cachedVertexAdcCredentialsExists *bool
+	vertexAdcMu                      sync.Once
+)
+
+// hasVertexAdcCredentials 检查是否存在 Vertex ADC 凭据
+func hasVertexAdcCredentials() bool {
+	vertexAdcMu.Do(func() {
+		// 首先检查 GOOGLE_APPLICATION_CREDENTIALS 环境变量
+		gacPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+		if gacPath != "" {
+			if _, err := os.Stat(gacPath); err == nil {
+				val := true
+				cachedVertexAdcCredentialsExists = &val
+				return
+			}
+		}
+
+		// 回退到默认 ADC 路径
+		var homeDir string
+		if runtime.GOOS == "windows" {
+			homeDir = os.Getenv("USERPROFILE")
+		} else {
+			homeDir = os.Getenv("HOME")
+		}
+
+		if homeDir != "" {
+			adcPath := filepath.Join(homeDir, ".config", "gcloud", "application_default_credentials.json")
+			if _, err := os.Stat(adcPath); err == nil {
+				val := true
+				cachedVertexAdcCredentialsExists = &val
+				return
+			}
+		}
+
+		val := false
+		cachedVertexAdcCredentialsExists = &val
+	})
+
+	if cachedVertexAdcCredentialsExists != nil {
+		return *cachedVertexAdcCredentialsExists
+	}
+	return false
+}
+
+// getCurrentTimestamp 获取当前时间戳
+func getCurrentTimestamp() int64 {
+	return time.Now().Unix()
+}
+
+// contains 判断字符串是否包含子字符串
+func contains(s, substr string) bool {
+	if len(s) < len(substr) {
+		return false
+	}
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }

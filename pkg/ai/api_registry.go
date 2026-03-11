@@ -28,9 +28,9 @@ type ApiProvider interface {
 
 // apiProvider 内部实现
 type apiProvider struct {
-	api           ModelApi
-	stream        func(Model, Context, *StreamOptions) *AssistantMessageEventStream
-	streamSimple  func(Model, Context, *SimpleStreamOptions) *AssistantMessageEventStream
+	api          ModelApi
+	stream       func(Model, Context, *StreamOptions) *AssistantMessageEventStream
+	streamSimple func(Model, Context, *SimpleStreamOptions) *AssistantMessageEventStream
 }
 
 func (p *apiProvider) GetAPI() ModelApi { return p.api }
@@ -63,13 +63,13 @@ func NewApiProvider(
 }
 
 // 确保实现了 ApiProvider 接口
-var _ ApiProvider = &apiProvider{}
+var _ ApiProvider = (*apiProvider)(nil)
 
 // ApiProviderRegistry 注册表
 type ApiProviderRegistry struct {
-	mu       sync.RWMutex
+	mu        sync.RWMutex
 	providers map[ModelApi]ApiProvider
-	sources   map[string][]ModelApi  // sourceId -> apis
+	sources   map[string][]ModelApi // sourceId -> apis
 }
 
 func NewApiProviderRegistry() *ApiProviderRegistry {
@@ -82,9 +82,9 @@ func NewApiProviderRegistry() *ApiProviderRegistry {
 func (r *ApiProviderRegistry) Register(provider ApiProvider, sourceID ...string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	r.providers[provider.GetAPI()] = provider
-	
+
 	if len(sourceID) > 0 && sourceID[0] != "" {
 		r.sources[sourceID[0]] = append(r.sources[sourceID[0]], provider.GetAPI())
 	}
@@ -100,7 +100,7 @@ func (r *ApiProviderRegistry) Get(api ModelApi) (ApiProvider, bool) {
 func (r *ApiProviderRegistry) GetAll() []ApiProvider {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	result := make([]ApiProvider, 0, len(r.providers))
 	for _, p := range r.providers {
 		result = append(result, p)
@@ -111,7 +111,7 @@ func (r *ApiProviderRegistry) GetAll() []ApiProvider {
 func (r *ApiProviderRegistry) UnregisterBySource(sourceID string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	if apis, ok := r.sources[sourceID]; ok {
 		for _, api := range apis {
 			delete(r.providers, api)
@@ -123,7 +123,7 @@ func (r *ApiProviderRegistry) UnregisterBySource(sourceID string) {
 func (r *ApiProviderRegistry) Clear() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	r.providers = make(map[ModelApi]ApiProvider)
 	r.sources = make(map[string][]ModelApi)
 }

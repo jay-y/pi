@@ -87,7 +87,7 @@ func (p *OpenAICompletionsProvider) StreamSimple(
 ) *AssistantMessageEventStream {
 	apiKey := opts.APIKey
 	if apiKey == "" {
-		apiKey = getEnvApiKey(model.GetProvider())
+		apiKey = GetEnvApiKey(model.GetProvider())
 	}
 	streamOptions := NewStreamOptions(
 		apiKey,
@@ -109,7 +109,7 @@ func (p *OpenAICompletionsProvider) doStream(
 ) error {
 	apiKey := opts.APIKey
 	if apiKey == "" {
-		apiKey = getEnvApiKey(model.GetProvider())
+		apiKey = GetEnvApiKey(model.GetProvider())
 	}
 
 	req, err := p.buildRequest(model, ctx, opts, apiKey)
@@ -371,31 +371,7 @@ func (p *OpenAICompletionsProvider) processStream(
 
 		// 处理 usage
 		if chunk.Usage != nil {
-			var cachedTokens int
-			if promptTokensDetails := chunk.Usage.PromptTokensDetails; promptTokensDetails != nil {
-				cachedTokens = promptTokensDetails.CachedTokens
-			} else {
-				cachedTokens = 0
-			}
-			var reasoningTokens int
-			if completionTokensDetails := chunk.Usage.CompletionTokensDetails; completionTokensDetails != nil {
-				reasoningTokens = completionTokensDetails.ReasoningTokens
-			} else {
-				reasoningTokens = 0
-			}
-			var outputTokens int
-			if completionTokensDetails := chunk.Usage.CompletionTokensDetails; completionTokensDetails != nil {
-				outputTokens = completionTokensDetails.AcceptedPredictionTokens + completionTokensDetails.RejectedPredictionTokens
-			} else {
-				// 如果没有 CompletionTokensDetails，直接使用 CompletionTokens
-				outputTokens = chunk.Usage.CompletionTokens
-			}
-			inputTokens := chunk.Usage.PromptTokens - cachedTokens
-			output.Usage.Input = inputTokens
-			output.Usage.Output = outputTokens + reasoningTokens
-			output.Usage.TotalTokens = inputTokens + outputTokens + reasoningTokens
-			output.Usage.CacheRead = cachedTokens
-			output.Usage.Cost = calculateCost(model, &output.Usage)
+			output.Usage = parseChunkUsage(chunk.Usage, model)
 		}
 
 		if len(chunk.Choices) == 0 {
@@ -588,6 +564,23 @@ func (p *OpenAICompletionsProvider) parseStreamingJSON(data string) map[string]a
 // 确保 OpenAICompletionsProvider 实现 ApiProvider 接口
 var _ ApiProvider = (*OpenAICompletionsProvider)(nil)
 
+type ChatCompletionChunkUsage struct {
+	PromptTokens        int `json:"prompt_tokens"`
+	PromptTokensDetails *struct {
+		AudioTokens  int `json:"audio_tokens"`
+		CachedTokens int `json:"cached_tokens"`
+	} `json:"prompt_tokens_details"`
+	CompletionTokens        int `json:"completion_tokens"`
+	CompletionTokensDetails *struct {
+		AcceptedPredictionTokens int `json:"accepted_prediction_tokens"`
+		AudioTokens              int `json:"audio_tokens"`
+		ReasoningTokens          int `json:"reasoning_tokens"`
+		RejectedPredictionTokens int `json:"rejected_prediction_tokens"`
+	} `json:"completion_tokens_details"`
+	TotalTokens  int `json:"total_tokens"`
+	CachedTokens int `json:"cached_tokens"`
+}
+
 // ChatCompletionChunk OpenAI 流式响应块
 type ChatCompletionChunk struct {
 	ID      string `json:"id"`
@@ -614,22 +607,7 @@ type ChatCompletionChunk struct {
 		} `json:"delta"`
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
-	Usage *struct {
-		PromptTokens        int `json:"prompt_tokens"`
-		PromptTokensDetails *struct {
-			AudioTokens  int `json:"audio_tokens"`
-			CachedTokens int `json:"cached_tokens"`
-		} `json:"prompt_tokens_details"`
-		CompletionTokens        int `json:"completion_tokens"`
-		CompletionTokensDetails *struct {
-			AcceptedPredictionTokens int `json:"accepted_prediction_tokens"`
-			AudioTokens              int `json:"audio_tokens"`
-			ReasoningTokens          int `json:"reasoning_tokens"`
-			RejectedPredictionTokens int `json:"rejected_prediction_tokens"`
-		} `json:"completion_tokens_details"`
-		TotalTokens  int `json:"total_tokens"`
-		CachedTokens int `json:"cached_tokens"`
-	} `json:"usage"`
+	Usage *ChatCompletionChunkUsage `json:"usage"`
 }
 
 // SSEParser SSE 解析器
@@ -662,4 +640,36 @@ func (p *SSEParser) Next() (*SSEEvent, error) {
 
 type SSEEvent struct {
 	Data string
+}
+
+func parseChunkUsage(rawUsage *ChatCompletionChunkUsage, model Model) Usage {
+	var cachedTokens int
+	if promptTokensDetails := rawUsage.PromptTokensDetails; promptTokensDetails != nil {
+		cachedTokens = promptTokensDetails.CachedTokens
+	} else {
+		cachedTokens = 0
+	}
+	var reasoningTokens int
+	if completionTokensDetails := rawUsage.CompletionTokensDetails; completionTokensDetails != nil {
+		reasoningTokens = completionTokensDetails.ReasoningTokens
+	} else {
+		reasoningTokens = 0
+	}
+	var outputTokens int
+	if completionTokensDetails := rawUsage.CompletionTokensDetails; completionTokensDetails != nil {
+		outputTokens = completionTokensDetails.AcceptedPredictionTokens + completionTokensDetails.RejectedPredictionTokens
+	} else {
+		// 如果没有 CompletionTokensDetails，直接使用 CompletionTokens
+		outputTokens = rawUsage.CompletionTokens
+	}
+	inputTokens := rawUsage.PromptTokens - cachedTokens
+	usage := Usage{
+		Input:       inputTokens,
+		Output:      outputTokens + reasoningTokens,
+		CacheRead:   cachedTokens,
+		CacheWrite:  0,
+		TotalTokens: inputTokens + outputTokens + cachedTokens,
+	}
+	usage.Cost = CalculateCost(model, &usage)
+	return usage
 }
