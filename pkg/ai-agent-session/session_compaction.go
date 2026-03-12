@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/jay-y/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 // 错误定义
@@ -101,7 +102,7 @@ func (s *AgentSession) isContextOverflow(msg *ai.AssistantMessage, contextWindow
 	}
 
 	for _, pattern := range overflowPatterns {
-		if containsIgnoreCase(msg.ErrorMessage, pattern) {
+		if utils.ContainsIgnoreCase(msg.ErrorMessage, pattern) {
 			return true
 		}
 	}

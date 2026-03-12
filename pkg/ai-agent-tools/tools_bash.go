@@ -13,6 +13,7 @@ import (
 
 	"github.com/jay-y/pi/pkg/ai"
 	agent "github.com/jay-y/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 // BashToolInput Bash 工具输入
@@ -24,7 +25,7 @@ type BashToolInput struct {
 // BashToolDetails Bash 工具详细信息
 type BashToolDetails struct {
 	Truncation     *TruncationResult `json:"truncation,omitempty"`
-	FullOutputPath string           `json:"fullOutputPath,omitempty"`
+	FullOutputPath string            `json:"fullOutputPath,omitempty"`
 }
 
 // BashOperations Bash 操作接口
@@ -96,18 +97,20 @@ func (o *DefaultBashOperations) Exec(ctx context.Context, command string, cwd st
 
 // BashTool Bash 工具
 type BashTool struct {
-	cwd          string
+	cwd           string
 	operations    BashOperations
 	commandPrefix string
 }
 
 func NewBashTool(cwd string, options ...BashToolOption) agent.AgentTool {
 	tool := &BashTool{
-		cwd:       cwd,
+		cwd:        cwd,
 		operations: &DefaultBashOperations{},
 	}
 	for _, opt := range options {
-		if opt != nil { opt(tool) }
+		if opt != nil {
+			opt(tool)
+		}
 	}
 	return agent.NewAgentTool(tool)
 }
@@ -126,7 +129,7 @@ func WithBashCommandPrefix(prefix string) BashToolOption {
 	}
 }
 
-func (t *BashTool) GetName() string { return "bash" }
+func (t *BashTool) GetName() string  { return "bash" }
 func (t *BashTool) GetLabel() string { return "bash" }
 func (t *BashTool) GetDescription() string {
 	return fmt.Sprintf("Execute a bash command in: %s. Output truncated to last %d lines or %dKB.",
@@ -154,12 +157,12 @@ func (t *BashTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	command := input.Command
 	if command == "" {
 		return nil, fmt.Errorf("command is required")
 	}
-	
+
 	var timeout time.Duration
 	if input.Timeout > 0 {
 		timeout = time.Duration(input.Timeout) * time.Second
@@ -237,15 +240,15 @@ func (t *BashTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 		startLine := truncation.TotalLines - truncation.OutputLines + 1
 		endLine := truncation.TotalLines
 		if truncation.LastLinePartial {
-			lastLineSize := FormatSize(len(bytes.Split(fullBuffer, []byte("\n"))[len(bytes.Split(fullBuffer, []byte("\n")))-1]))
+			lastLineSize := utils.FormatSize(len(bytes.Split(fullBuffer, []byte("\n"))[len(bytes.Split(fullBuffer, []byte("\n")))-1]))
 			outputText += fmt.Sprintf("\n\n[Showing last %s of line %d (line is %s). Full output: %s]",
-				FormatSize(truncation.OutputBytes), endLine, lastLineSize, tempFilePath)
+				utils.FormatSize(truncation.OutputBytes), endLine, lastLineSize, tempFilePath)
 		} else if truncation.TruncatedBy == "lines" {
 			outputText += fmt.Sprintf("\n\n[Showing lines %d-%d of %d. Full output: %s]",
 				startLine, endLine, truncation.TotalLines, tempFilePath)
 		} else {
 			outputText += fmt.Sprintf("\n\n[Showing lines %d-%d of %d (%s limit). Full output: %s]",
-				startLine, endLine, truncation.TotalLines, FormatSize(DEFAULT_MAX_BYTES), tempFilePath)
+				startLine, endLine, truncation.TotalLines, utils.FormatSize(DEFAULT_MAX_BYTES), tempFilePath)
 		}
 	}
 	if err != nil {

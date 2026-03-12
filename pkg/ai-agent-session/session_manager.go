@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jay-y/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 const CurrentSessionVersion = 3
@@ -486,7 +487,7 @@ func findMostRecentSession(sessionDir string) string {
 // newSessionManager 创建新的会话管理器
 func newSessionManager(cwd, sessionDir, sessionFile string, persist bool) *SessionManager {
 	if persist && sessionDir != "" {
-		if sessionDir, err := EnsureDirExists(sessionDir); err != nil {
+		if sessionDir, err := utils.EnsureDirExists(sessionDir); err != nil {
 			slog.Error("Failed to ensure session directory exists", "dir", sessionDir, "err", err)
 		}
 	}

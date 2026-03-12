@@ -45,7 +45,9 @@ func NewWriteTool(cwd string, options ...WriteToolOption) agent.AgentTool {
 		operations: &DefaultWriteOperations{},
 	}
 	for _, opt := range options {
-		if opt != nil { opt(tool) }
+		if opt != nil {
+			opt(tool)
+		}
 	}
 	return agent.NewAgentTool(tool)
 }
@@ -58,7 +60,7 @@ func WithWriteOperations(ops WriteOperations) WriteToolOption {
 	}
 }
 
-func (t *WriteTool) GetName() string { return "write" }
+func (t *WriteTool) GetName() string  { return "write" }
 func (t *WriteTool) GetLabel() string { return "write" }
 func (t *WriteTool) GetDescription() string {
 	return "Write content to a file. Creates file if it doesn't exist, overwrites if it does."
@@ -88,7 +90,7 @@ func (t *WriteTool) Execute(ctx context.Context, params map[string]any, onUpdate
 	path := input.Path
 	content := input.Content
 
-	absolutePath, err := ResolvePath(path, t.cwd)
+	absolutePath, err := resolvePath(path, t.cwd)
 	if err != nil {
 		return nil, err
 	}

@@ -66,7 +66,9 @@ func NewEditTool(cwd string, options ...EditToolOption) agent.AgentTool {
 		operations: &DefaultEditOperations{},
 	}
 	for _, opt := range options {
-		if opt != nil { opt(tool) }
+		if opt != nil {
+			opt(tool)
+		}
 	}
 	return agent.NewAgentTool(tool)
 }
@@ -79,9 +81,11 @@ func WithEditOperations(ops EditOperations) EditToolOption {
 	}
 }
 
-func (t *EditTool) GetName() string        { return "edit" }
-func (t *EditTool) GetLabel() string       { return "edit" }
-func (t *EditTool) GetDescription() string { return "Edit a file by replacing exact text. The oldText must match exactly." }
+func (t *EditTool) GetName() string  { return "edit" }
+func (t *EditTool) GetLabel() string { return "edit" }
+func (t *EditTool) GetDescription() string {
+	return "Edit a file by replacing exact text. The oldText must match exactly."
+}
 func (t *EditTool) GetParameters() map[string]any {
 	return map[string]any{
 		"type": "object",
@@ -114,7 +118,7 @@ func (t *EditTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	}
 	oldText := input.OldText
 	newText := input.NewText
-	absolutePath, err := ResolvePath(path, t.cwd)
+	absolutePath, err := resolvePath(path, t.cwd)
 	if err != nil {
 		return nil, err
 	}

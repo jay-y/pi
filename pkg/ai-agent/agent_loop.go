@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/jay-y/pi/pkg/ai"
 )
@@ -539,9 +538,4 @@ func parseStreamingJson(s string) map[string]any {
 		return result
 	}
 	return map[string]any{}
-}
-
-// getCurrentTimestamp 获取当前时间戳
-func getCurrentTimestamp() int64 {
-	return time.Now().UnixMilli()
 }

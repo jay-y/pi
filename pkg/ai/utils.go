@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
-	"time"
 )
 
 // GetEnvApiKey 从已知环境变量获取提供者的 API 密钥
@@ -117,9 +116,4 @@ func hasVertexAdcCredentials() bool {
 		return *cachedVertexAdcCredentialsExists
 	}
 	return false
-}
-
-// getCurrentTimestamp 获取当前时间戳（毫秒）
-func getCurrentTimestamp() int64 {
-	return time.Now().UnixMilli()
 }

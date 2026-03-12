@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jay-y/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 // RetryConfig 重试配置
@@ -34,25 +35,25 @@ func (s *AgentSession) isRetryableError(msg *ai.AssistantMessage) bool {
 	// 检查错误消息是否包含可重试的关键词
 	err := msg.ErrorMessage
 	// Match: overloaded_error, rate limit, 429, 500, 502, 503, 504, service unavailable, connection errors, fetch failed, terminated, retry delay exceeded
-	return containsIgnoreCase(err, "overloaded") ||
-		containsIgnoreCase(err, "rate limit") ||
-		containsIgnoreCase(err, "too many requests") ||
-		containsIgnoreCase(err, "429") ||
-		containsIgnoreCase(err, "500") ||
-		containsIgnoreCase(err, "502") ||
-		containsIgnoreCase(err, "503") ||
-		containsIgnoreCase(err, "504") ||
-		containsIgnoreCase(err, "service unavailable") ||
-		containsIgnoreCase(err, "server error") ||
-		containsIgnoreCase(err, "internal error") ||
-		containsIgnoreCase(err, "connection error") ||
-		containsIgnoreCase(err, "connection refused") ||
-		containsIgnoreCase(err, "other side closed") ||
-		containsIgnoreCase(err, "fetch failed") ||
-		containsIgnoreCase(err, "upstream connect") ||
-		containsIgnoreCase(err, "reset before headers") ||
-		containsIgnoreCase(err, "terminated") ||
-		containsIgnoreCase(err, "retry delay")
+	return utils.ContainsIgnoreCase(err, "overloaded") ||
+		utils.ContainsIgnoreCase(err, "rate limit") ||
+		utils.ContainsIgnoreCase(err, "too many requests") ||
+		utils.ContainsIgnoreCase(err, "429") ||
+		utils.ContainsIgnoreCase(err, "500") ||
+		utils.ContainsIgnoreCase(err, "502") ||
+		utils.ContainsIgnoreCase(err, "503") ||
+		utils.ContainsIgnoreCase(err, "504") ||
+		utils.ContainsIgnoreCase(err, "service unavailable") ||
+		utils.ContainsIgnoreCase(err, "server error") ||
+		utils.ContainsIgnoreCase(err, "internal error") ||
+		utils.ContainsIgnoreCase(err, "connection error") ||
+		utils.ContainsIgnoreCase(err, "connection refused") ||
+		utils.ContainsIgnoreCase(err, "other side closed") ||
+		utils.ContainsIgnoreCase(err, "fetch failed") ||
+		utils.ContainsIgnoreCase(err, "upstream connect") ||
+		utils.ContainsIgnoreCase(err, "reset before headers") ||
+		utils.ContainsIgnoreCase(err, "terminated") ||
+		utils.ContainsIgnoreCase(err, "retry delay")
 }
 
 // handleRetryableError 处理可重试错误
@@ -153,8 +154,12 @@ func calculateBackoffDelay(attempt int, config RetryConfig) int {
 
 	// 添加抖动
 	if config.JitterFactor > 0 {
-		jitter := int(float64(delay) * config.JitterFactor)
-		delay += randomInt(-jitter, jitter)
+		jitter := int64(float64(delay) * config.JitterFactor)
+		jitter, err := utils.RandomInt(-jitter, jitter)
+		if err != nil {
+			panic(err)
+		}
+		delay += int(jitter)
 	}
 
 	return delay

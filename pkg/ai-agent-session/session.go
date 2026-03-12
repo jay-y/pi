@@ -13,6 +13,7 @@ import (
 
 	"github.com/jay-y/pi/pkg/ai"
 	agent "github.com/jay-y/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 // ToolDefinition 工具定义
@@ -248,14 +249,14 @@ func (s *AgentSession) processAgentEvent(event agent.AgentEvent) {
 			if messageText != "" {
 				s.messagesMu.Lock()
 				// 检查 steering 队列
-				steeringIndex := indexOf(s.steeringMessages, messageText)
+				steeringIndex := utils.IndexOf(s.steeringMessages, messageText)
 				if steeringIndex != -1 {
-					s.steeringMessages = removeAtIndex(s.steeringMessages, steeringIndex)
+					s.steeringMessages = utils.RemoveAtIndex(s.steeringMessages, steeringIndex)
 				} else {
 					// 检查 follow-up 队列
-					followUpIndex := indexOf(s.followUpMessages, messageText)
+					followUpIndex := utils.IndexOf(s.followUpMessages, messageText)
 					if followUpIndex != -1 {
-						s.followUpMessages = removeAtIndex(s.followUpMessages, followUpIndex)
+						s.followUpMessages = utils.RemoveAtIndex(s.followUpMessages, followUpIndex)
 					}
 				}
 				s.messagesMu.Unlock()

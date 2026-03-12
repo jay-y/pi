@@ -12,6 +12,7 @@ import (
 
 	"github.com/jay-y/pi/pkg/ai"
 	agent "github.com/jay-y/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 // GrepToolInput grep 工具的输入参数
@@ -131,9 +132,9 @@ type GrepToolInput struct {
 
 // GrepToolDetails Grep 工具详细信息
 type GrepToolDetails struct {
-	Truncation       *TruncationResult `json:"truncation,omitempty"`
-	MatchLimitReached int             `json:"matchLimitReached,omitempty"`
-	LinesTruncated   bool             `json:"linesTruncated,omitempty"`
+	Truncation        *TruncationResult `json:"truncation,omitempty"`
+	MatchLimitReached int               `json:"matchLimitReached,omitempty"`
+	LinesTruncated    bool              `json:"linesTruncated,omitempty"`
 }
 
 // GrepOperations Grep 操作接口
@@ -173,7 +174,9 @@ func NewGrepTool(cwd string, options ...GrepToolOption) agent.AgentTool {
 		operations: &DefaultGrepOperations{},
 	}
 	for _, opt := range options {
-		if opt != nil { opt(tool) }
+		if opt != nil {
+			opt(tool)
+		}
 	}
 	return agent.NewAgentTool(tool)
 }
@@ -186,7 +189,7 @@ func WithGrepOperations(ops GrepOperations) GrepToolOption {
 	}
 }
 
-func (t *GrepTool) GetName() string { return "grep" }
+func (t *GrepTool) GetName() string  { return "grep" }
 func (t *GrepTool) GetLabel() string { return "grep" }
 func (t *GrepTool) GetDescription() string {
 	return fmt.Sprintf("Search file contents for a pattern. Output truncated to %d matches or %dKB.",
@@ -245,7 +248,7 @@ func (t *GrepTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 		limit = 100
 	}
 
-	searchPath, err := ResolvePath(searchDir, t.cwd)
+	searchPath, err := resolvePath(searchDir, t.cwd)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +301,7 @@ func (t *GrepTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	}
 
 	type MatchEvent struct {
-		Type string     `json:"type"`
+		Type string    `json:"type"`
 		Data MatchData `json:"data"`
 	}
 
@@ -423,7 +426,7 @@ func (t *GrepTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	}
 
 	if truncation.Truncated {
-		notices = append(notices, fmt.Sprintf("%s limit reached", FormatSize(DEFAULT_MAX_BYTES)))
+		notices = append(notices, fmt.Sprintf("%s limit reached", utils.FormatSize(DEFAULT_MAX_BYTES)))
 		details.Truncation = &truncation
 	}
 

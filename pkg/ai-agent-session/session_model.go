@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/jay-y/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 // 错误定义
@@ -29,7 +30,6 @@ type ScopedModel struct {
 	Model         ai.Model         `json:"model"`
 	ThinkingLevel ai.ThinkingLevel `json:"thinkingLevel"`
 }
-
 
 // SetModel 设置模型
 func (s *AgentSession) SetModel(ctx context.Context, model ai.Model) error {
@@ -59,7 +59,7 @@ func (s *AgentSession) SetModel(ctx context.Context, model ai.Model) error {
 type ModelCycleResult struct {
 	Model         ai.Model         `json:"model"`
 	ThinkingLevel ai.ThinkingLevel `json:"thinkingLevel"`
-	IsScoped      bool          `json:"isScoped"`
+	IsScoped      bool             `json:"isScoped"`
 }
 
 // CycleModel 循环切换模型
@@ -364,7 +364,7 @@ func supportsXhigh(model ai.Model) bool {
 
 	modelId := model.GetID()
 	for _, m := range xhighModels {
-		if containsIgnoreCase(modelId, m) {
+		if utils.ContainsIgnoreCase(modelId, m) {
 			return true
 		}
 	}

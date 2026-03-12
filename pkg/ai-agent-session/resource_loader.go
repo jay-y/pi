@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/jay-y/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -155,7 +156,7 @@ func NewDefaultResourceLoader(options DefaultResourceLoaderOptions) *DefaultReso
 
 	agentDir := options.AgentDir
 	if agentDir == "" {
-		agentDir = GetAgentDir()
+		agentDir = utils.GetAgentDir()
 	}
 
 	loader := &DefaultResourceLoader{

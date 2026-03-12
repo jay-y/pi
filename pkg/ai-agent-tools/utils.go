@@ -156,75 +156,12 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen]
 }
 
-// ResolvePath 解析路径
-func ResolvePath(path, cwd string) (string, error) {
+// resolvePath 解析路径
+func resolvePath(path, cwd string) (string, error) {
 	if filepath.IsAbs(path) {
 		return path, nil
 	}
 	return filepath.Join(cwd, path), nil
-}
-
-// max 取最大值
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-// min 取最小值
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// FormatSize 格式化文件大小
-func FormatSize(bytes int) string {
-	const (
-		KB = 1024
-		MB = 1024 * KB
-		GB = 1024 * MB
-	)
-
-	switch {
-	case bytes >= GB:
-		return fmt.Sprintf("%.2f GB", float64(bytes)/GB)
-	case bytes >= MB:
-		return fmt.Sprintf("%.2f MB", float64(bytes)/MB)
-	case bytes >= KB:
-		return fmt.Sprintf("%.2f KB", float64(bytes)/KB)
-	default:
-		return fmt.Sprintf("%d bytes", bytes)
-	}
-}
-
-// indexOf 查找字符串在切片中的索引
-func indexOf(slice []string, item string) int {
-	for i, s := range slice {
-		if s == item {
-			return i
-		}
-	}
-	return -1
-}
-
-// removeAtIndex 从切片中移除指定索引的元素
-func removeAtIndex(slice []string, index int) []string {
-	if index < 0 || index >= len(slice) {
-		return slice
-	}
-	return append(slice[:index], slice[index+1:]...)
-}
-
-// reverseString 反转字符串
-func reverseString(s string) string {
-	runes := []rune(s)
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-		runes[i], runes[j] = runes[j], runes[i]
-	}
-	return string(runes)
 }
 
 // ValidateToolParams 校验并解析工具参数

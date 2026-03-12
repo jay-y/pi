@@ -1,10 +1,12 @@
-package session
+package utils
 
 import (
+	"crypto/rand"
+	"fmt"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 // GetAgentDir 获取代理目录
@@ -17,13 +19,31 @@ func GetAgentDir() string {
 	return filepath.Join(home, ".pi")
 }
 
-// ResolveRelativePath 解析相对路径，支持 ~ 展开（等价于 $HOME）
+// SanitizeProviderName 清理提供商名称用于环境变量
+func SanitizeProviderName(provider string) string {
+	// 将提供商名称转换为大写的有效环境变量名
+	// 例如：github-copilot -> GITHUB_COPILOT
+	result := ""
+	for _, r := range provider {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == '_' || r == '-' {
+			if r == '-' {
+				result += "_"
+			} else {
+				result += string(r)
+			}
+		}
+	}
+	return result
+}
+
+// ResolvePath 解析路径，支持 ~ 展开（等价于 $HOME）
 // 示例：
-//   ~                -> /Users/creator
-//   ~/pi             -> /Users/creator/pi
-//   ./workspace      -> /current/working/directory/workspace
-//   /absolute/path   -> /absolute/path
-func ResolveRelativePath(path string) (string, error) {
+//
+//	~                -> /Users/creator
+//	~/pi             -> /Users/creator/pi
+//	./workspace      -> /current/working/directory/workspace
+//	/absolute/path   -> /absolute/path
+func ResolvePath(path string) (string, error) {
 	if path == "" {
 		return "", nil
 	}
@@ -55,7 +75,7 @@ func ResolveRelativePath(path string) (string, error) {
 // EnsureDirExists 确保目录存在，若不存在则创建
 // 返回实际目录路径（已做 abs 处理）和错误
 func EnsureDirExists(dir string) (string, error) {
-	resolved, err := ResolveRelativePath(dir)
+	resolved, err := ResolvePath(dir)
 	if err != nil {
 		return "", err
 	}
@@ -68,7 +88,7 @@ func EnsureDirExists(dir string) (string, error) {
 // EnsureFileExists 确保文件存在，若不存在则创建空文件
 // 返回实际文件路径（已做 abs 处理）和错误
 func EnsureFileExists(filePath string) (string, error) {
-	resolved, err := ResolveRelativePath(filePath)
+	resolved, err := ResolvePath(filePath)
 	if err != nil {
 		return "", err
 	}
@@ -112,7 +132,7 @@ func ResolveHeaders(headers map[string]string) map[string]string {
 	return resolved
 }
 
-func indexOf(slice []string, item string) int {
+func IndexOf(slice []string, item string) int {
 	for i, s := range slice {
 		if s == item {
 			return i
@@ -121,26 +141,22 @@ func indexOf(slice []string, item string) int {
 	return -1
 }
 
-func removeAtIndex(slice []string, index int) []string {
+func RemoveAtIndex(slice []string, index int) []string {
 	if index < 0 || index >= len(slice) {
 		return slice
 	}
 	return append(slice[:index], slice[index+1:]...)
 }
 
-func getCurrentTimestamp() int64 {
-	return time.Now().UnixMilli()
+// ContainsIgnoreCase 检查字符串是否包含子串（忽略大小写）
+func ContainsIgnoreCase(s, substr string) bool {
+	sLower := strings.ToLower(s)
+	substrLower := strings.ToLower(substr)
+	return Contains(sLower, substrLower)
 }
 
-// containsIgnoreCase 检查字符串是否包含子串（忽略大小写）
-func containsIgnoreCase(s, substr string) bool {
-	sLower := toLower(s)
-	substrLower := toLower(substr)
-	return contains(sLower, substrLower)
-}
-
-// toLower 转换为小写
-func toLower(s string) string {
+// ToLower 转换为小写
+func ToLower(s string) string {
 	result := make([]byte, len(s))
 	for i, c := range s {
 		if c >= 'A' && c <= 'Z' {
@@ -152,8 +168,8 @@ func toLower(s string) string {
 	return string(result)
 }
 
-// contains 检查字符串是否包含子串
-func contains(s, substr string) bool {
+// Contains 检查字符串是否包含子串
+func Contains(s, substr string) bool {
 	if len(substr) > len(s) {
 		return false
 	}
@@ -165,11 +181,41 @@ func contains(s, substr string) bool {
 	return false
 }
 
-// randomInt 生成随机整数（简化实现）
-func randomInt(min, max int) int {
-	if min >= max {
-		return min
+// RandomInt 生成 [min, max] 范围内的安全随机整数
+func RandomInt(min, max int64) (int64, error) {
+	if min > max {
+		return 0, fmt.Errorf("min 不能大于 max")
 	}
-	// 简化实现，实际应使用 crypto/rand
-	return min + (int(getCurrentTimestamp())%1000)*(max-min)/1000
+	if min == max {
+		return min, nil
+	}
+
+	// 生成 [0, max-min] 范围的随机数
+	rangeSize := big.NewInt(max - min + 1)
+	n, err := rand.Int(rand.Reader, rangeSize)
+	if err != nil {
+		return 0, fmt.Errorf("生成随机数失败: %v", err)
+	}
+
+	return n.Int64() + min, nil
+}
+
+// FormatSize 格式化文件大小
+func FormatSize(bytes int) string {
+	const (
+		KB = 1024
+		MB = 1024 * KB
+		GB = 1024 * MB
+	)
+
+	switch {
+	case bytes >= GB:
+		return fmt.Sprintf("%.2f GB", float64(bytes)/GB)
+	case bytes >= MB:
+		return fmt.Sprintf("%.2f MB", float64(bytes)/MB)
+	case bytes >= KB:
+		return fmt.Sprintf("%.2f KB", float64(bytes)/KB)
+	default:
+		return fmt.Sprintf("%d bytes", bytes)
+	}
 }

@@ -1,5 +1,7 @@
 package ai
 
+import "time"
+
 // ContentBlock 内容块接口
 type ContentBlock interface {
 	GetType() ContentBlockType
@@ -114,7 +116,7 @@ func NewUserMessage(content any) *UserMessage {
 	return &UserMessage{
 		Role:      MessageRoleUser,
 		Content:   content,
-		Timestamp: getCurrentTimestamp(),
+		Timestamp: time.Now().UnixMilli(),
 	}
 }
 
@@ -148,7 +150,7 @@ func NewAssistantMessage(api string, provider string, model string) *AssistantMe
 		Provider:   provider,
 		Model:      model,
 		StopReason: StopReasonStop,
-		Timestamp:  getCurrentTimestamp(),
+		Timestamp:  time.Now().UnixMilli(),
 	}
 }
 
@@ -179,6 +181,6 @@ func NewToolResultMessage(toolCallID, toolName string, content []ContentBlock, i
 		ToolName:   toolName,
 		Content:    content,
 		IsError:    isError,
-		Timestamp:  getCurrentTimestamp(),
+		Timestamp:  time.Now().UnixMilli(),
 	}
 }

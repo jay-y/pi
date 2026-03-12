@@ -10,6 +10,7 @@ import (
 
 	"github.com/jay-y/pi/pkg/ai"
 	agent "github.com/jay-y/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 // LsToolInput Ls 工具输入
@@ -21,7 +22,7 @@ type LsToolInput struct {
 // LsToolDetails Ls 工具详细信息
 type LsToolDetails struct {
 	Truncation        *TruncationResult `json:"truncation,omitempty"`
-	EntryLimitReached int             `json:"entryLimitReached,omitempty"`
+	EntryLimitReached int               `json:"entryLimitReached,omitempty"`
 }
 
 // LsOperations Ls 操作接口
@@ -69,7 +70,9 @@ func NewLsTool(cwd string, options ...LsToolOption) agent.AgentTool {
 		operations: &DefaultLsOperations{},
 	}
 	for _, opt := range options {
-		if opt != nil { opt(tool) }
+		if opt != nil {
+			opt(tool)
+		}
 	}
 	return agent.NewAgentTool(tool)
 }
@@ -82,7 +85,7 @@ func WithLsOperations(ops LsOperations) LsToolOption {
 	}
 }
 
-func (t *LsTool) GetName() string { return "ls" }
+func (t *LsTool) GetName() string  { return "ls" }
 func (t *LsTool) GetLabel() string { return "ls" }
 func (t *LsTool) GetDescription() string {
 	return fmt.Sprintf("List directory contents. Output truncated to %d entries or %dKB.",
@@ -115,7 +118,7 @@ func (t *LsTool) Execute(ctx context.Context, params map[string]any, onUpdate fu
 		limit = 500
 	}
 
-	dirPath, err := ResolvePath(path, t.cwd)
+	dirPath, err := resolvePath(path, t.cwd)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +192,7 @@ func (t *LsTool) Execute(ctx context.Context, params map[string]any, onUpdate fu
 	}
 
 	if truncation.Truncated {
-		notices = append(notices, fmt.Sprintf("%s limit reached", FormatSize(DEFAULT_MAX_BYTES)))
+		notices = append(notices, fmt.Sprintf("%s limit reached", utils.FormatSize(DEFAULT_MAX_BYTES)))
 		details.Truncation = &truncation
 	}
 

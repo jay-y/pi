@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/jay-y/pi/pkg/ai"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 // OpenRouterRouting OpenRouter路由
@@ -41,7 +42,6 @@ type OpenAICompletionsCompat struct {
 
 // OpenAIResponsesCompat OpenAI响应兼容
 type OpenAIResponsesCompat struct{}
-
 
 // ModelOverride 模型覆盖配置
 type ModelOverride struct {
@@ -126,7 +126,7 @@ type ModelDefinitionInput struct {
 
 // ModelRegistry 模型注册表
 type ModelRegistry struct {
-	authStorage           AuthStorage
+	authStorage           *AuthStorage
 	modelsJsonPath        string
 	models                []*ai.BaseModel
 	customProviderApiKeys map[string]string
@@ -161,7 +161,7 @@ func (mr *ModelRegistry) GetModels(provider string) []ai.Model {
 // NewModelRegistry 创建新的模型注册表
 func NewModelRegistry(authStorage *AuthStorage, modelsJsonPath *string) *ModelRegistry {
 	if modelsJsonPath == nil {
-		*modelsJsonPath = filepath.Join(GetAgentDir(), "models.json")
+		*modelsJsonPath = filepath.Join(utils.GetAgentDir(), "models.json")
 	}
 
 	mr := &ModelRegistry{
@@ -174,10 +174,10 @@ func NewModelRegistry(authStorage *AuthStorage, modelsJsonPath *string) *ModelRe
 
 	// 设置回退解析器
 	if authStorage != nil {
-		mr.authStorage = *authStorage
+		mr.authStorage = authStorage
 		(*authStorage).SetFallbackResolver(func(provider string) *string {
 			if keyConfig, ok := mr.customProviderApiKeys[provider]; ok {
-				resolved := ResolveConfigValue(keyConfig)
+				resolved := utils.ResolveConfigValue(keyConfig)
 				if resolved != "" {
 					return &resolved
 				}
@@ -241,13 +241,13 @@ func (mr *ModelRegistry) loadModels() {
 		// 让OAuth提供商修改它们的模型
 		for _, oauthProvider := range mr.authStorage.GetOAuthProviders() {
 			cred := mr.authStorage.Get(oauthProvider.GetID())
-			if cred != nil && cred.Type == "oauth" {
+			if cred != nil && cred.Type == ai.AuthCredentialTypeOAuth {
 				// 转换为 Model 切片
 				aiModels := make([]ai.Model, len(combined))
 				for i, m := range combined {
 					aiModels[i] = m
 				}
-				modified := oauthProvider.ModifyModels(aiModels, cred)
+				modified := oauthProvider.ModifyModels(aiModels, *cred)
 				// 转换回 ai.BaseModel 切片
 				combined = make([]*ai.BaseModel, len(modified))
 				for i, m := range modified {
@@ -294,7 +294,7 @@ func (mr *ModelRegistry) loadBuiltInModels(
 
 			// 应用提供商级别的baseUrl/headers覆盖
 			if providerOverride.BaseURL != "" || len(providerOverride.Headers) > 0 {
-				resolvedHeaders := ResolveHeaders(providerOverride.Headers)
+				resolvedHeaders := utils.ResolveHeaders(providerOverride.Headers)
 				if resolvedHeaders != nil {
 					model.Headers = mergeHeaders(model.Headers, resolvedHeaders)
 				}
@@ -385,7 +385,7 @@ func applyModelOverride(model *ai.BaseModel, override ModelOverride) *ai.BaseMod
 
 	// 合并头部
 	if override.Headers != nil {
-		resolvedHeaders := ResolveHeaders(override.Headers)
+		resolvedHeaders := utils.ResolveHeaders(override.Headers)
 		if resolvedHeaders != nil {
 			result.Headers = mergeHeaders(result.Headers, resolvedHeaders)
 		}
@@ -569,13 +569,13 @@ func (mr *ModelRegistry) parseModels(config *ModelsConfig) []*ai.BaseModel {
 			}
 
 			// 合并头部：提供商头部是基础，模型头部覆盖
-			providerHeaders := ResolveHeaders(providerConfig.Headers)
-			modelHeaders := ResolveHeaders(modelDef.Headers)
+			providerHeaders := utils.ResolveHeaders(providerConfig.Headers)
+			modelHeaders := utils.ResolveHeaders(modelDef.Headers)
 			headers := mergeHeaders(providerHeaders, modelHeaders)
 
 			// 如果authHeader为true，添加Authorization头部
 			if providerConfig.AuthHeader != nil && *providerConfig.AuthHeader && providerConfig.APIKey != "" {
-				resolvedKey := ResolveConfigValue(providerConfig.APIKey)
+				resolvedKey := utils.ResolveConfigValue(providerConfig.APIKey)
 				if resolvedKey != "" {
 					headers = mergeHeaders(headers, map[string]string{"Authorization": "Bearer " + resolvedKey})
 				}
@@ -739,13 +739,13 @@ func (mr *ModelRegistry) applyProviderConfig(providerName string, config Provide
 			}
 
 			// 合并头部
-			providerHeaders := ResolveHeaders(config.Headers)
-			modelHeaders := ResolveHeaders(modelDef.Headers)
+			providerHeaders := utils.ResolveHeaders(config.Headers)
+			modelHeaders := utils.ResolveHeaders(modelDef.Headers)
 			headers := mergeHeaders(providerHeaders, modelHeaders)
 
 			// 如果authHeader为true，添加Authorization头部
 			if config.AuthHeader != nil && *config.AuthHeader && config.APIKey != "" {
-				resolvedKey := ResolveConfigValue(config.APIKey)
+				resolvedKey := utils.ResolveConfigValue(config.APIKey)
 				if resolvedKey != "" {
 					headers = mergeHeaders(headers, map[string]string{"Authorization": "Bearer " + resolvedKey})
 				}
@@ -768,7 +768,7 @@ func (mr *ModelRegistry) applyProviderConfig(providerName string, config Provide
 		}
 	} else if config.BaseURL != "" {
 		// 仅覆盖：更新现有模型的baseUrl/headers
-		resolvedHeaders := ResolveHeaders(config.Headers)
+		resolvedHeaders := utils.ResolveHeaders(config.Headers)
 		for i, m := range mr.models {
 			if string(m.Provider) != providerName {
 				continue

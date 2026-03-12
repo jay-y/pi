@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 const (
@@ -322,7 +324,7 @@ func LoadSkills(options LoadSkillsOptions) LoadSkillsResult {
 
 	agentDir := options.AgentDir
 	if agentDir == "" {
-		agentDir = GetAgentDir()
+		agentDir = utils.GetAgentDir()
 	}
 
 	includeDefaults := true

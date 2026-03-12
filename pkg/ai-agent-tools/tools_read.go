@@ -9,6 +9,7 @@ import (
 
 	"github.com/jay-y/pi/pkg/ai"
 	agent "github.com/jay-y/pi/pkg/ai-agent"
+	"github.com/jay-y/pi/pkg/utils"
 )
 
 // ReadToolInput 读取工具的输入参数
@@ -70,19 +71,21 @@ func (d *DefaultReadOperations) DetectImageMimeType(absolutePath string) (string
 
 // ReadTool Read 工具
 type ReadTool struct {
-	cwd             string
+	cwd              string
 	operations       ReadOperations
 	autoResizeImages bool
 }
 
 func NewReadTool(cwd string, options ...ReadToolOption) agent.AgentTool {
 	tool := &ReadTool{
-		cwd:             cwd,
+		cwd:              cwd,
 		operations:       &DefaultReadOperations{},
 		autoResizeImages: true,
 	}
 	for _, opt := range options {
-		if opt != nil { opt(tool) }
+		if opt != nil {
+			opt(tool)
+		}
 	}
 	return agent.NewAgentTool(tool)
 }
@@ -101,7 +104,7 @@ func WithAutoResizeImages(autoResize bool) ReadToolOption {
 	}
 }
 
-func (t *ReadTool) GetName() string { return "read" }
+func (t *ReadTool) GetName() string  { return "read" }
 func (t *ReadTool) GetLabel() string { return "read" }
 func (t *ReadTool) GetDescription() string {
 	return fmt.Sprintf("Read the contents of a file. Supports text files and images (jpg, png, gif, webp). Images are sent as attachments. For text files, output is truncated to %d lines or %dKB (whichever is hit first). Use offset/limit for large files. When you need the full file, continue with offset until complete.", DEFAULT_MAX_LINES, DEFAULT_MAX_BYTES/1024)
@@ -132,12 +135,12 @@ func (t *ReadTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	path := input.Path
 	if path == "" {
 		return nil, fmt.Errorf("path is required")
 	}
-	
+
 	var offset, limit int
 	if input.Offset != nil {
 		offset = *input.Offset
@@ -145,8 +148,8 @@ func (t *ReadTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	if input.Limit != nil {
 		limit = *input.Limit
 	}
-	
-	absolutePath, err := ResolvePath(path, t.cwd)
+
+	absolutePath, err := resolvePath(path, t.cwd)
 	if err != nil {
 		return nil, err
 	}
@@ -225,9 +228,9 @@ func (t *ReadTool) readText(path string, offset, limit int) (*agent.AgentToolRes
 	var outputText string
 	var details *ReadToolDetails
 	if truncation.FirstLineExceeds {
-		firstLineSize := FormatSize(len(allLines[startLine]))
+		firstLineSize := utils.FormatSize(len(allLines[startLine]))
 		outputText = fmt.Sprintf("[Line %d is %s, exceeds %s limit. Use bash: sed -n '%dp' %s | head -c %d]",
-			startLine+1, firstLineSize, FormatSize(DEFAULT_MAX_BYTES), path, DEFAULT_MAX_BYTES)
+			startLine+1, firstLineSize, utils.FormatSize(DEFAULT_MAX_BYTES), path, DEFAULT_MAX_BYTES)
 		details = &ReadToolDetails{Truncation: &truncation}
 	} else if truncation.Truncated {
 		endLineDisplay := startLine + truncation.OutputLines
@@ -238,7 +241,7 @@ func (t *ReadTool) readText(path string, offset, limit int) (*agent.AgentToolRes
 				startLine+1, endLineDisplay, totalFileLines, nextOffset)
 		} else {
 			outputText += fmt.Sprintf("\n\n[Showing lines %d-%d of %d (%s limit). Use offset=%d to continue.]",
-				startLine+1, endLineDisplay, totalFileLines, FormatSize(DEFAULT_MAX_BYTES), nextOffset)
+				startLine+1, endLineDisplay, totalFileLines, utils.FormatSize(DEFAULT_MAX_BYTES), nextOffset)
 		}
 		details = &ReadToolDetails{Truncation: &truncation}
 	} else if userLimitedLines > 0 && startLine+userLimitedLines < totalFileLines {
