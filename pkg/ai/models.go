@@ -1,5 +1,9 @@
 package ai
 
+import (
+	"strings"
+)
+
 // Cost 成本
 type Cost struct {
 	Input      float64 `json:"input"`      // 输入的token数的成本
@@ -78,6 +82,80 @@ func (m *BaseModel) GetAPIKey() string             { return m.APIKey }
 // 确保实现了 Model 接口
 var _ Model = (*BaseModel)(nil)
 
+// ModelRegistry 模型注册表
+type ModelRegistry struct {
+	providers map[string]map[string]Model
+}
+
+// NewModelRegistry 创建模型注册表
+func NewModelRegistry() *ModelRegistry {
+	return &ModelRegistry{
+		providers: make(map[string]map[string]Model),
+	}
+}
+
+// Register 注册模型
+func (r *ModelRegistry) Register(model Model) {
+	provider := model.GetProvider()
+	if _, exists := r.providers[provider]; !exists {
+		r.providers[provider] = make(map[string]Model)
+	}
+	r.providers[provider][model.GetID()] = model
+}
+
+// Get 获取模型
+func (r *ModelRegistry) Get(provider string, modelID string) Model {
+	if providerModels, exists := r.providers[provider]; exists {
+		return providerModels[modelID]
+	}
+	return nil
+}
+
+// GetProviders 获取所有提供商
+func (r *ModelRegistry) GetProviders() []string {
+	providers := make([]string, 0, len(r.providers))
+	for provider := range r.providers {
+		providers = append(providers, provider)
+	}
+	return providers
+}
+
+// GetModels 获取特定提供商的所有模型
+func (r *ModelRegistry) GetModels(provider string) []Model {
+	if providerModels, exists := r.providers[provider]; exists {
+		models := make([]Model, 0, len(providerModels))
+		for _, model := range providerModels {
+			models = append(models, model)
+		}
+		return models
+	}
+	return []Model{}
+}
+
+// 全局模型注册表
+var modelRegistry = NewModelRegistry()
+
+// RegisterModel 注册模型到全局注册表
+func RegisterModel(model Model) {
+	modelRegistry.Register(model)
+}
+
+// GetModel 获取模型
+func GetModel(provider string, modelID string) Model {
+	return modelRegistry.Get(provider, modelID)
+}
+
+// GetProviders 获取所有提供商
+func GetProviders() []string {
+	return modelRegistry.GetProviders()
+}
+
+// GetModels 获取特定提供商的所有模型
+func GetModels(provider string) []Model {
+	return modelRegistry.GetModels(provider)
+}
+
+// CalculateCost 计算使用成本
 func CalculateCost(model Model, usage *Usage) Cost {
 	if usage == nil {
 		return Cost{
@@ -94,4 +172,33 @@ func CalculateCost(model Model, usage *Usage) Cost {
 	usage.Cost.CacheWrite = (model.GetCost().CacheWrite / 1000000) * float64(usage.CacheWrite)
 	usage.Cost.Total = usage.Cost.Input + usage.Cost.Output + usage.Cost.CacheRead + usage.Cost.CacheWrite
 	return usage.Cost
+}
+
+// SupportsXhigh 检查模型是否支持 xhigh 思考级别
+// 支持的模型：
+// - GPT-5.2 / GPT-5.3 / GPT-5.4 模型系列
+// - Anthropic Messages API Opus 4.6 模型（xhigh 映射到自适应努力 "max"）
+func SupportsXhigh(model Model) bool {
+	modelID := model.GetID()
+	api := model.GetAPI()
+
+	if strings.Contains(modelID, "gpt-5.2") || strings.Contains(modelID, "gpt-5.3") || strings.Contains(modelID, "gpt-5.4") {
+		return true
+	}
+
+	if api == "anthropic-messages" {
+		return strings.Contains(modelID, "opus-4-6") || strings.Contains(modelID, "opus-4.6")
+	}
+
+	return false
+}
+
+// ModelsAreEqual 比较两个模型是否相等
+// 通过比较 id 和 provider 来判断
+// 如果任一模型为 nil，返回 false
+func ModelsAreEqual(a Model, b Model) bool {
+	if a == nil || b == nil {
+		return false
+	}
+	return a.GetID() == b.GetID() && a.GetProvider() == b.GetProvider()
 }
