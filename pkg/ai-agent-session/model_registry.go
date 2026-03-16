@@ -11,62 +11,30 @@ import (
 	"github.com/jay-y/pi/pkg/utils"
 )
 
-// OpenRouterRouting OpenRouter路由
-type OpenRouterRouting struct {
-	Only  []string `json:"only,omitempty"`
-	Order []string `json:"order,omitempty"`
-}
-
-// VercelGatewayRouting Vercel网关路由
-type VercelGatewayRouting struct {
-	Only  []string `json:"only,omitempty"`
-	Order []string `json:"order,omitempty"`
-}
-
-// OpenAICompletionsCompat OpenAI完成兼容
-type OpenAICompletionsCompat struct {
-	SupportsStore                    bool                  `json:"supportsStore,omitempty"`
-	SupportsDeveloperRole            bool                  `json:"supportsDeveloperRole,omitempty"`
-	SupportsReasoningEffort          bool                  `json:"supportsReasoningEffort,omitempty"`
-	SupportsUsageInStreaming         bool                  `json:"supportsUsageInStreaming,omitempty"`
-	MaxTokensField                   string                `json:"maxTokensField,omitempty"`
-	RequiresToolResultName           bool                  `json:"requiresToolResultName,omitempty"`
-	RequiresAssistantAfterToolResult bool                  `json:"requiresAssistantAfterToolResult,omitempty"`
-	RequiresThinkingAsText           bool                  `json:"requiresThinkingAsText,omitempty"`
-	RequiresMistralToolIds           bool                  `json:"requiresMistralToolIds,omitempty"`
-	ThinkingFormat                   string                `json:"thinkingFormat,omitempty"`
-	OpenRouterRouting                *OpenRouterRouting    `json:"openRouterRouting,omitempty"`
-	VercelGatewayRouting             *VercelGatewayRouting `json:"vercelGatewayRouting,omitempty"`
-	SupportsStrictMode               bool                  `json:"supportsStrictMode,omitempty"`
-}
-
-// OpenAIResponsesCompat OpenAI响应兼容
-type OpenAIResponsesCompat struct{}
-
 // ModelOverride 模型覆盖配置
 type ModelOverride struct {
-	Name          *string                  `json:"name,omitempty"`
-	Reasoning     *bool                    `json:"reasoning,omitempty"`
-	Input         []string                 `json:"input,omitempty"` // "text" | "image"
-	Cost          *ai.ModelCost            `json:"cost,omitempty"`
-	ContextWindow *int                     `json:"contextWindow,omitempty"`
-	MaxTokens     *int                     `json:"maxTokens,omitempty"`
-	Headers       map[string]string        `json:"headers,omitempty"`
-	Compat        *OpenAICompletionsCompat `json:"compat,omitempty"`
+	Name          *string                     `json:"name,omitempty"`
+	Reasoning     *bool                       `json:"reasoning,omitempty"`
+	Input         []string                    `json:"input,omitempty"` // "text" | "image"
+	Cost          *ai.ModelCost               `json:"cost,omitempty"`
+	ContextWindow *int                        `json:"contextWindow,omitempty"`
+	MaxTokens     *int                        `json:"maxTokens,omitempty"`
+	Headers       map[string]string           `json:"headers,omitempty"`
+	Compat        *ai.OpenAICompletionsCompat `json:"compat,omitempty"`
 }
 
 // ModelDefinition 模型定义
 type ModelDefinition struct {
-	ID            string                   `json:"id"`
-	Name          *string                  `json:"name,omitempty"`
-	API           *string                  `json:"api,omitempty"`
-	Reasoning     *bool                    `json:"reasoning,omitempty"`
-	Input         []string                 `json:"input,omitempty"` // "text" | "image"
-	Cost          *ai.ModelCost            `json:"cost,omitempty"`
-	ContextWindow *int                     `json:"contextWindow,omitempty"`
-	MaxTokens     *int                     `json:"maxTokens,omitempty"`
-	Headers       map[string]string        `json:"headers,omitempty"`
-	Compat        *OpenAICompletionsCompat `json:"compat,omitempty"`
+	ID            string                      `json:"id"`
+	Name          *string                     `json:"name,omitempty"`
+	API           *string                     `json:"api,omitempty"`
+	Reasoning     *bool                       `json:"reasoning,omitempty"`
+	Input         []string                    `json:"input,omitempty"` // "text" | "image"
+	Cost          *ai.ModelCost               `json:"cost,omitempty"`
+	ContextWindow *int                        `json:"contextWindow,omitempty"`
+	MaxTokens     *int                        `json:"maxTokens,omitempty"`
+	Headers       map[string]string           `json:"headers,omitempty"`
+	Compat        *ai.OpenAICompletionsCompat `json:"compat,omitempty"`
 }
 
 // ProviderConfig 提供商配置
@@ -121,7 +89,7 @@ type ModelDefinitionInput struct {
 	ContextWindow int
 	MaxTokens     int
 	Headers       map[string]string
-	Compat        *OpenAICompletionsCompat
+	Compat        *ai.OpenAICompletionsCompat
 }
 
 // ModelRegistry 模型注册表
@@ -400,7 +368,7 @@ func applyModelOverride(model *ai.BaseModel, override ModelOverride) *ai.BaseMod
 }
 
 // mergeCompat 合并兼容配置
-func mergeCompat(baseCompat any, overrideCompat *OpenAICompletionsCompat) any {
+func mergeCompat(baseCompat any, overrideCompat *ai.OpenAICompletionsCompat) any {
 	if overrideCompat == nil {
 		return baseCompat
 	}

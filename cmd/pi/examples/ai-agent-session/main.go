@@ -190,7 +190,7 @@ func main() {
 		Cost:          ai.ModelCost{},
 		ContextWindow: 128000,
 		MaxTokens:     32000,
-		Compat: &session.OpenAICompletionsCompat{
+		Compat: &ai.OpenAICompletionsCompat{
 			ThinkingFormat: "qwen",
 		},
 	}
