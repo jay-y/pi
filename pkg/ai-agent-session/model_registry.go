@@ -129,6 +129,7 @@ func (mr *ModelRegistry) GetModels(provider string) []ai.Model {
 // NewModelRegistry 创建新的模型注册表
 func NewModelRegistry(authStorage *AuthStorage, modelsJsonPath *string) *ModelRegistry {
 	if modelsJsonPath == nil {
+		modelsJsonPath = new(string)
 		*modelsJsonPath = filepath.Join(utils.GetAgentDir(), "models.json")
 	}
 

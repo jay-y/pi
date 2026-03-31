@@ -628,9 +628,7 @@ func prefixIgnorePattern(line string, prefix string) string {
 		pattern = pattern[1:]
 	}
 
-	if strings.HasPrefix(pattern, "/") {
-		pattern = pattern[1:]
-	}
+	pattern = strings.TrimPrefix(pattern, "/")
 
 	prefixed := prefix + pattern
 	if negated {

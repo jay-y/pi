@@ -83,7 +83,8 @@ func (b *FileAuthStorageBackend) WithLock(fn func(current string) *LockResult) (
 	// 尝试获取锁（带重试）
 	maxAttempts := 10
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		err := lockfile.TryLock()
+		var err error
+		err = lockfile.TryLock()
 		if err == nil {
 			// 成功获取锁
 			defer func() {
@@ -92,7 +93,8 @@ func (b *FileAuthStorageBackend) WithLock(fn func(current string) *LockResult) (
 			}()
 
 			// 读取当前内容
-			current, err := os.ReadFile(b.authPath)
+			var current []byte
+			current, err = os.ReadFile(b.authPath)
 			if err != nil && !os.IsNotExist(err) {
 				return nil, err
 			}
@@ -107,10 +109,10 @@ func (b *FileAuthStorageBackend) WithLock(fn func(current string) *LockResult) (
 
 			// 如果需要更新文件
 			if result != nil && result.Next != nil {
-				if err := b.ensureParentDir(); err != nil {
+				if err = b.ensureParentDir(); err != nil {
 					return result, err
 				}
-				if err := os.WriteFile(b.authPath, []byte(*result.Next), 0o600); err != nil {
+				if err = os.WriteFile(b.authPath, []byte(*result.Next), 0o600); err != nil {
 					return result, err
 				}
 			}
