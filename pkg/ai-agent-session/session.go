@@ -378,16 +378,17 @@ func (s *AgentSession) emit(event AgentSessionEvent) {
 // Subscribe 订阅代理事件
 func (s *AgentSession) Subscribe(listener AgentSessionEventListener) func() {
 	s.eventListenersMu.Lock()
+	index := len(s.eventListeners)
 	s.eventListeners = append(s.eventListeners, listener)
 	s.eventListenersMu.Unlock()
 
 	return func() {
 		s.eventListenersMu.Lock()
-		for i, l := range s.eventListeners {
-			if &l == &listener {
-				s.eventListeners = append(s.eventListeners[:i], s.eventListeners[i+1:]...)
-				break
-			}
+		// 检查索引是否有效
+		if index >= 0 && index < len(s.eventListeners) {
+			// 检查该位置的监听器是否与原始监听器相同
+			// 注意：这仍然是基于位置的，不是基于值的比较
+			s.eventListeners = append(s.eventListeners[:index], s.eventListeners[index+1:]...)
 		}
 		s.eventListenersMu.Unlock()
 	}

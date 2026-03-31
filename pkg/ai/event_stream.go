@@ -102,7 +102,7 @@ func NewAssistantMessageEventStream() *AssistantMessageEventStream {
 	}
 
 	return &AssistantMessageEventStream{
-		EventStream: NewEventStream[AssistantMessageEvent, *AssistantMessage](isComplete, extractResult),
+		EventStream: NewEventStream(isComplete, extractResult),
 	}
 }
 
