@@ -441,6 +441,7 @@ func executeToolCalls(
 
 		stream.Push(&AgentEventToolExecutionEnd{
 			Type:     AgentEventTypeToolExecutionEnd,
+			ToolCallID: toolCall.ID,
 			ToolName: toolCall.Name,
 			Result:   result,
 			IsError:  isError,
@@ -495,6 +496,7 @@ func skipToolCall(toolCall *ai.ToolCallContentBlock, stream *AgentEventStream) *
 
 	stream.Push(&AgentEventToolExecutionEnd{
 		Type:     AgentEventTypeToolExecutionEnd,
+		ToolCallID: toolCall.ID,
 		ToolName: toolCall.Name,
 		Result:   result,
 		IsError:  true,

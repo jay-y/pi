@@ -487,8 +487,8 @@ func findMostRecentSession(sessionDir string) string {
 // newSessionManager 创建新的会话管理器
 func newSessionManager(cwd, sessionDir, sessionFile string, persist bool) *SessionManager {
 	if persist && sessionDir != "" {
-		if sessionDir, err := utils.EnsureDirExists(sessionDir); err != nil {
-			slog.Error("Failed to ensure session directory exists", "dir", sessionDir, "err", err)
+		if dir, err := utils.EnsureDirExists(sessionDir); err != nil {
+			slog.Error("Failed to ensure session directory exists", "dir", dir, "err", err)
 		}
 	}
 
