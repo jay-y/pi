@@ -18,69 +18,66 @@
 
 ```
 pi/
-├── cmd/                            # 命令行程序入口
-│   └── pi/
-│       └── examples/               # 示例程序入口
-│           ├── ai/                 # Agent 演示程序
-│           │   └── main.go         # 演示基础 LLM 调用
-│           ├── ai-agent/           # Agent 演示程序
-│           │   └── main.go         # Agent 核心功能演示（Steering/Follow-up）
-│           └── ai-agent-session/   # 会话程序入口
-│               └── main.go         # AgentSession 会话管理演示
-├── pkg/
-│   ├── ai/                         # 统一 LLM API 抽象层
-│   │   ├── api_provider_openai.go  # OpenAI API 实现
-│   │   ├── api_registry.go         # API 提供者注册表
-│   │   ├── constants.go            # 常量定义（API、Provider、Thinking Level、StopReason等）
-│   │   ├── events.go               # Assistant 消息事件类型定义
-│   │   ├── event_stream.go         # 通用事件流处理
-│   │   ├── messages.go             # 消息类型定义（UserMessage, AssistantMessage, ToolResultMessage）
-│   │   ├── model.go                # 模型接口和实现
-│   │   ├── stream.go               # 流式和非流式调用接口
-│   │   ├── tool_call.go            # 工具调用数据结构
-│   │   ├── types.go                # 通用类型定义（ThinkingBudgets, Cost, Usage等）
-│   │   └── utils.go                # 工具函数（API密钥获取、成本计算等）
-│   ├── ai-agent/                   # 有状态 Agent 引擎
-│   │   ├── agent.go                # Agent 核心实现
-│   │   ├── agent_events.go         # Agent 事件类型定义
-│   │   ├── agent_tool.go           # Agent 工具接口定义
-│   │   ├── agent_loop.go           # 代理循环逻辑（Steering/Follow-up处理）
-│   │   ├── constants.go            # Agent 常量定义
-│   │   └── proxy.go                # 代理服务事件转换工具
-│   ├── ai-agent-session/           # 会话模块
-│   │   ├── session.go              # AgentSession 核心实现
-│   │   ├── session_events.go       # 会话事件类型定义
-│   │   ├── session_model.go        # 模型切换和思考级别管理
-│   │   ├── session_manager.go      # 会话管理器（持久化/恢复）
-│   │   ├── settings_manager.go     # 设置管理器（全局/项目配置）
-│   │   ├── session_prompt.go       # 提示词管理
-│   │   ├── session_tool.go         # 工具扩展管理
-│   │   ├── model_registry.go       # 模型注册表和 API Key 管理
-│   │   ├── resource_loader.go      # 资源加载器
-│   │   ├── utils.go                # 工具函数
-│   │   ├── constants.go            # 会话常量定义
-│   │   ├── session_compaction.go   # 会话压缩
-│   │   └── session_retry.go        # 会话重试机制
-│   └── ai-agent-tools/             # 内置工具集
-│       ├── tools.go                # 工具创建工厂函数
-│       ├── utils.go                # 工具工具函数（文件截断、路径解析等）
-│       ├── tools_read.go           # 文件读取工具（支持图片）
-│       ├── tools_write.go          # 文件写入工具
-│       ├── tools_edit.go           # 文件编辑工具（基于 Diff）
-│       ├── tools_bash.go           # Bash 命令执行工具
-│       ├── tools_grep.go           # 文件内容搜索工具（基于 ripgrep）
-│       ├── tools_find.go           # 文件查找工具
-│       └── tools_ls.go             # 目录列出工具
-├── docs/                           # 详细文档
+├── ai/                         # 统一 LLM API 抽象层
+│   ├── api_provider_openai.go  # OpenAI API 实现
+│   ├── api_registry.go         # API 提供者注册表
+│   ├── constants.go            # 常量定义（API、Provider、Thinking Level、StopReason等）
+│   ├── events.go               # Assistant 消息事件类型定义
+│   ├── event_stream.go         # 通用事件流处理
+│   ├── messages.go             # 消息类型定义（UserMessage, AssistantMessage, ToolResultMessage）
+│   ├── model.go                # 模型接口和实现
+│   ├── stream.go               # 流式和非流式调用接口
+│   ├── tool_call.go            # 工具调用数据结构
+│   ├── types.go                # 通用类型定义（ThinkingBudgets, Cost, Usage等）
+│   └── utils.go                # 工具函数（API密钥获取、成本计算等）
+├── ai-agent/                   # 有状态 Agent 引擎
+│   ├── agent.go                # Agent 核心实现
+│   ├── agent_events.go         # Agent 事件类型定义
+│   ├── agent_tool.go           # Agent 工具接口定义
+│   ├── agent_loop.go           # 代理循环逻辑（Steering/Follow-up处理）
+│   ├── constants.go            # Agent 常量定义
+│   └── proxy.go                # 代理服务事件转换工具
+├── ai-agent-session/           # 会话模块
+│   ├── session.go              # AgentSession 核心实现
+│   ├── session_events.go       # 会话事件类型定义
+│   ├── session_model.go        # 模型切换和思考级别管理
+│   ├── session_manager.go      # 会话管理器（持久化/恢复）
+│   ├── settings_manager.go     # 设置管理器（全局/项目配置）
+│   ├── session_prompt.go       # 提示词管理
+│   ├── session_tool.go         # 工具扩展管理
+│   ├── model_registry.go       # 模型注册表和 API Key 管理
+│   ├── resource_loader.go      # 资源加载器
+│   ├── utils.go                # 工具函数
+│   ├── constants.go            # 会话常量定义
+│   ├── session_compaction.go   # 会话压缩
+│   └── session_retry.go        # 会话重试机制
+│── ai-agent-tools/             # 内置工具集
+│   ├── tools.go                # 工具创建工厂函数
+│   ├── utils.go                # 工具工具函数（文件截断、路径解析等）
+│   ├── tools_read.go           # 文件读取工具（支持图片）
+│   ├── tools_write.go          # 文件写入工具
+│   ├── tools_edit.go           # 文件编辑工具（基于 Diff）
+│   ├── tools_bash.go           # Bash 命令执行工具
+│   ├── tools_grep.go           # 文件内容搜索工具（基于 ripgrep）
+│   ├── tools_find.go           # 文件查找工具
+│   └── tools_ls.go             # 目录列出工具
+├── docs/                       # 详细文档
 │   ├── 01-快速开始.md
 │   ├── 02-模型选择.md
 │   ├── 03-系统提示词.md
 │   ├── 04-技能管理.md
 │   ├── 05-会话管理.md
 │   └── 06-完整控制.md
-├── configs/                        # 配置文件
-├── scripts/                        # 构建脚本
-└── test/                           # 测试数据
+├── examples/                   # 示例程序入口
+│   ├── ai/                     # Agent 演示程序
+│   │   └── main.go             # 演示基础 LLM 调用
+│   ├── ai-agent/               # Agent 演示程序
+│   │   └── main.go             # Agent 核心功能演示（Steering/Follow-up）
+│   └── ai-agent-session/       # 会话程序入口
+│       └── main.go             # AgentSession 会话管理演示
+├── configs/                    # 配置文件
+├── scripts/                    # 构建脚本
+└── test/                       # 测试数据
 ```
 
 ## 核心概念
@@ -130,7 +127,7 @@ SDK 支持多种思考级别，不同模型支持的级别不同：
 提供统一的 LLM 调用接口，支持多个提供者：
 
 ```go
-import "github.com/jay-y/pi/pkg/ai"
+import "github.com/jay-y/pi/ai"
 
 // 注册所有内置 API 提供者
 ai.RegisterBuiltInApiProviders()
@@ -202,7 +199,7 @@ for event := range stream.Events() {
 有状态的 Agent，支持工具调用和事件流：
 
 ```go
-import agent "github.com/jay-y/pi/pkg/ai-agent"
+import agent "github.com/jay-y/pi/ai-agent"
 
 // 创建 Agent
 ag := agent.NewAgent(agent.AgentOptions{
@@ -255,7 +252,7 @@ ag.FollowUp(ai.NewUserMessage("添加错误处理"))
 完整的会话生命周期管理：
 
 ```go
-import "github.com/jay-y/pi/pkg/ai-agent-session"
+import "github.com/jay-y/pi/ai-agent-session"
 
 // 创建 Agent
 agent := agent.NewAgent(agent.AgentOptions{
@@ -319,7 +316,7 @@ agentSession.CycleThinkingLevel()
 提供文件操作、Bash 执行等工具：
 
 ```go
-import "github.com/jay-y/pi/pkg/ai-agent-tools"
+import "github.com/jay-y/pi/ai-agent-tools"
 
 cwd, _ := os.Getwd()
 
@@ -368,7 +365,7 @@ import (
     "context"
     "fmt"
 
-    "github.com/jay-y/pi/pkg/ai"
+    "github.com/jay-y/pi/ai"
 )
 
 func main() {
@@ -450,7 +447,7 @@ import (
     "context"
     "fmt"
 
-    "github.com/jay-y/pi/pkg/ai"
+    "github.com/jay-y/pi/ai"
 )
 
 func main() {
@@ -510,9 +507,9 @@ import (
     "fmt"
     "os"
 
-    "github.com/jay-y/pi/pkg/ai"
-    agent "github.com/jay-y/pi/pkg/ai-agent"
-    tools "github.com/jay-y/pi/pkg/ai-agent-tools"
+    "github.com/jay-y/pi/ai"
+    agent "github.com/jay-y/pi/ai-agent"
+    tools "github.com/jay-y/pi/ai-agent-tools"
 )
 
 func main() {
@@ -581,10 +578,10 @@ import (
     "fmt"
     "os"
 
-    "github.com/jay-y/pi/pkg/ai"
-    agent "github.com/jay-y/pi/pkg/ai-agent"
-    session "github.com/jay-y/pi/pkg/ai-agent-session"
-    tools "github.com/jay-y/pi/pkg/ai-agent-tools"
+    "github.com/jay-y/pi/ai"
+    agent "github.com/jay-y/pi/ai-agent"
+    session "github.com/jay-y/pi/ai-agent-session"
+    tools "github.com/jay-y/pi/ai-agent-tools"
 )
 
 func main() {
