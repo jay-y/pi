@@ -19,48 +19,53 @@
 ```
 pi/
 ├── ai/                         # 统一 LLM API 抽象层
-│   ├── api_provider_openai.go  # OpenAI API 实现
+│   ├── api_openai_completions.go  # OpenAI API 实现
 │   ├── api_registry.go         # API 提供者注册表
 │   ├── constants.go            # 常量定义（API、Provider、Thinking Level、StopReason等）
 │   ├── events.go               # Assistant 消息事件类型定义
 │   ├── event_stream.go         # 通用事件流处理
 │   ├── messages.go             # 消息类型定义（UserMessage, AssistantMessage, ToolResultMessage）
-│   ├── model.go                # 模型接口和实现
+│   ├── models.go               # 模型接口和实现
+│   ├── oauth.go                # OAuth 相关功能
 │   ├── stream.go               # 流式和非流式调用接口
-│   ├── tool_call.go            # 工具调用数据结构
-│   ├── types.go                # 通用类型定义（ThinkingBudgets, Cost, Usage等）
 │   └── utils.go                # 工具函数（API密钥获取、成本计算等）
 ├── ai-agent/                   # 有状态 Agent 引擎
 │   ├── agent.go                # Agent 核心实现
 │   ├── agent_events.go         # Agent 事件类型定义
-│   ├── agent_tool.go           # Agent 工具接口定义
 │   ├── agent_loop.go           # 代理循环逻辑（Steering/Follow-up处理）
-│   ├── constants.go            # Agent 常量定义
+│   ├── agent_tool.go           # Agent 工具接口定义
 │   └── proxy.go                # 代理服务事件转换工具
 ├── ai-agent-session/           # 会话模块
-│   ├── session.go              # AgentSession 核心实现
-│   ├── session_events.go       # 会话事件类型定义
-│   ├── session_model.go        # 模型切换和思考级别管理
-│   ├── session_manager.go      # 会话管理器（持久化/恢复）
-│   ├── settings_manager.go     # 设置管理器（全局/项目配置）
-│   ├── session_prompt.go       # 提示词管理
-│   ├── session_tool.go         # 工具扩展管理
+│   ├── auth_storage.go         # 认证存储
+│   ├── constants.go            # 会话常量定义
+│   ├── messages.go             # 会话消息处理
 │   ├── model_registry.go       # 模型注册表和 API Key 管理
 │   ├── resource_loader.go      # 资源加载器
-│   ├── utils.go                # 工具函数
-│   ├── constants.go            # 会话常量定义
+│   ├── session.go              # AgentSession 核心实现
 │   ├── session_compaction.go   # 会话压缩
-│   └── session_retry.go        # 会话重试机制
-│── ai-agent-tools/             # 内置工具集
+│   ├── session_events.go       # 会话事件类型定义
+│   ├── session_extension.go    # 会话扩展
+│   ├── session_manager.go      # 会话管理器（持久化/恢复）
+│   ├── session_model.go        # 模型切换和思考级别管理
+│   ├── session_prompt.go       # 提示词管理
+│   ├── session_retry.go        # 会话重试机制
+│   ├── session_tool.go         # 工具扩展管理
+│   ├── settings_manager.go     # 设置管理器（全局/项目配置）
+│   └── skills.go               # 技能管理
+├── ai-agent-tools/             # 内置工具集
 │   ├── tools.go                # 工具创建工厂函数
-│   ├── utils.go                # 工具工具函数（文件截断、路径解析等）
+│   ├── tools_bash.go           # Bash 命令执行工具
+│   ├── tools_edit.go           # 文件编辑工具（基于 Diff）
+│   ├── tools_edit_diff.go      # 文件编辑差异处理
+│   ├── tools_find.go           # 文件查找工具
+│   ├── tools_grep.go           # 文件内容搜索工具（基于 ripgrep）
+│   ├── tools_ls.go             # 目录列出工具
 │   ├── tools_read.go           # 文件读取工具（支持图片）
 │   ├── tools_write.go          # 文件写入工具
-│   ├── tools_edit.go           # 文件编辑工具（基于 Diff）
-│   ├── tools_bash.go           # Bash 命令执行工具
-│   ├── tools_grep.go           # 文件内容搜索工具（基于 ripgrep）
-│   ├── tools_find.go           # 文件查找工具
-│   └── tools_ls.go             # 目录列出工具
+│   └── utils.go                # 工具工具函数（文件截断、路径解析等）
+├── utils/                      # 通用工具
+│   ├── lockfile/               # 锁文件实现
+│   └── utils.go                # 通用工具函数
 ├── docs/                       # 详细文档
 │   ├── 01-快速开始.md
 │   ├── 02-模型选择.md
@@ -69,15 +74,18 @@ pi/
 │   ├── 05-会话管理.md
 │   └── 06-完整控制.md
 ├── examples/                   # 示例程序入口
-│   ├── ai/                     # Agent 演示程序
-│   │   └── main.go             # 演示基础 LLM 调用
-│   ├── ai-agent/               # Agent 演示程序
-│   │   └── main.go             # Agent 核心功能演示（Steering/Follow-up）
-│   └── ai-agent-session/       # 会话程序入口
-│       └── main.go             # AgentSession 会话管理演示
-├── configs/                    # 配置文件
-├── scripts/                    # 构建脚本
-└── test/                       # 测试数据
+│   ├── ai/                     # 基础 LLM 调用演示
+│   │   └── main.go
+│   ├── ai-agent/               # Agent 核心功能演示
+│   │   └── main.go
+│   └── ai-agent-session/       # 会话管理演示
+│       └── main.go
+├── .gitignore
+├── go.mod
+├── go.sum
+├── LICENSE
+├── Makefile
+└── README.md
 ```
 
 ## 核心概念
@@ -673,13 +681,13 @@ make test
 make clean
 
 # 运行 AI 示例
-go run cmd/ai/main.go
+go run examples/ai/main.go
 
 # 运行 Agent 示例
-go run cmd/ai/agent/main.go
+go run examples/ai-agent/main.go
 
 # 运行 Session 示例
-go run cmd/ai/agent/session/main.go
+go run examples/ai-agent-session/main.go
 ```
 
 ## 常见问题
@@ -778,11 +786,14 @@ ag.Subscribe(func(event agent.AgentEvent) {
 
 ### 代码结构说明
 
-- `cmd/pi/ai-*`: 命令行程序和示例
+- `ai/`: 统一 LLM API 抽象层
+- `ai-agent/`: 有状态 Agent 引擎
+- `ai-agent-session/`: 会话管理模块
+- `ai-agent-tools/`: 内置工具集
+- `utils/`: 通用工具
 - `docs/`: 文档
-- `pkg/ai-*`: 各功能模块代码
-- `scripts/`: 脚本
-- `test/`: 测试数据
+- `examples/`: 示例程序
+- `go.mod`/`go.sum`: Go 模块依赖
 
 ### 运行测试
 
