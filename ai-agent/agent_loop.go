@@ -409,7 +409,7 @@ func executeToolCalls(
 					stream.Push(NewAgentEventToolExecutionUpdate(
 						toolCall.ID,
 						toolCall.Name,
-						toolCall.Arguments,
+						&toolCall.Arguments,
 						partialResult,
 					))
 				})
@@ -428,7 +428,7 @@ func executeToolCalls(
 		stream.Push(NewAgentEventToolExecutionEnd(
 			toolCall.ID,
 			toolCall.Name,
-			result,
+			&result,
 			isError,
 		))
 
@@ -467,10 +467,10 @@ func executeToolCalls(
 
 // skipToolCall 跳过工具调用
 func skipToolCall(toolCall *ai.ToolCallContentBlock, stream *AgentEventStream) *ai.ToolResultMessage {
-	result := AgentToolResult{
-		Content: []ai.ContentBlock{ai.NewTextContentBlock("Skipped due to queued user message.")},
-		Details: map[string]any{},
-	}
+	result := NewAgentToolResult(
+		[]ai.ContentBlock{ai.NewTextContentBlock("Skipped due to queued user message.")},
+		map[string]any{},
+	)
 
 	stream.Push(NewAgentEventToolExecutionStart(
 		toolCall.ID,

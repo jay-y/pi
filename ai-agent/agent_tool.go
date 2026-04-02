@@ -21,6 +21,13 @@ type AgentToolResult struct {
 	Details any           `json:"details"`
 }
 
+func NewAgentToolResult(content []ai.ContentBlock, details any) *AgentToolResult {
+	return &AgentToolResult{
+		Content: content,
+		Details: details,
+	}
+}
+
 // AgentTool 代理工具
 type AgentTool struct {
 	Name        string `json:"name"`

@@ -168,15 +168,15 @@ type AgentEventToolExecutionUpdate struct {
 	Type          string `json:"type"`
 	ToolCallID    string `json:"toolCallId"`
 	ToolName      string `json:"toolName"`
-	Args          any    `json:"args"`
-	PartialResult any    `json:"partialResult"`
+	Args          *any    `json:"args"`
+	PartialResult *AgentToolResult `json:"partialResult"`
 }
 
 func (e *AgentEventToolExecutionUpdate) GetType() string {
 	return e.Type
 }
 
-func NewAgentEventToolExecutionUpdate(toolCallID, toolName string, args, partialResult any) *AgentEventToolExecutionUpdate {
+func NewAgentEventToolExecutionUpdate(toolCallID, toolName string, args *any, partialResult *AgentToolResult) *AgentEventToolExecutionUpdate {
 	return &AgentEventToolExecutionUpdate{
 		Type:          AgentEventTypeToolExecutionUpdate,
 		ToolCallID:    toolCallID,
@@ -191,7 +191,7 @@ type AgentEventToolExecutionEnd struct {
 	Type       string `json:"type"`
 	ToolCallID string `json:"toolCallId"`
 	ToolName   string `json:"toolName"`
-	Result     any    `json:"result"`
+	Result     *AgentToolResult `json:"result"`
 	IsError    bool   `json:"isError"`
 }
 
@@ -199,7 +199,7 @@ func (e *AgentEventToolExecutionEnd) GetType() string {
 	return e.Type
 }
 
-func NewAgentEventToolExecutionEnd(toolCallID, toolName string, result any, isError bool) *AgentEventToolExecutionEnd {
+func NewAgentEventToolExecutionEnd(toolCallID, toolName string, result *AgentToolResult, isError bool) *AgentEventToolExecutionEnd {
 	return &AgentEventToolExecutionEnd{
 		Type:       AgentEventTypeToolExecutionEnd,
 		ToolCallID: toolCallID,
