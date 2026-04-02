@@ -19,8 +19,17 @@ type EditToolInput struct {
 
 // EditToolDetails Edit 工具详细信息
 type EditToolDetails struct {
+	Path 		     string `json:"path"`
 	Diff             string `json:"diff"`
 	FirstChangedLine int    `json:"firstChangedLine,omitempty"`
+}
+
+func NewEditToolDetails(path string, diff string, firstChangedLine int) *EditToolDetails {
+	return &EditToolDetails{
+		Path: path,
+		Diff: diff,
+		FirstChangedLine: firstChangedLine,
+	}
 }
 
 // EditOperations Edit 操作接口
@@ -122,7 +131,7 @@ func (t *EditTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	if err != nil {
 		return nil, err
 	}
-	if err := t.operations.Access(absolutePath); err != nil {
+	if err = t.operations.Access(absolutePath); err != nil {
 		return nil, fmt.Errorf("file not found: %s", path)
 	}
 	if ctx.Err() == context.Canceled {
@@ -170,9 +179,6 @@ func (t *EditTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 		Content: []ai.ContentBlock{
 			ai.NewTextContentBlock(fmt.Sprintf("Successfully replaced text in %s.", path)),
 		},
-		Details: &EditToolDetails{
-			Diff:             diffResult.Diff,
-			FirstChangedLine: diffResult.FirstChangedLine,
-		},
+		Details: NewEditToolDetails(path, diffResult.Diff, diffResult.FirstChangedLine),
 	}, nil
 }

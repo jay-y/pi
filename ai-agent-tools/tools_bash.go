@@ -181,7 +181,6 @@ func (t *BashTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 		totalBytes += len(data)
 		if totalBytes > DEFAULT_MAX_BYTES && tempFile == nil {
 			tempFilePath = filepath.Join(os.TempDir(), fmt.Sprintf("pi-bash-%x.log", time.Now().UnixNano()))
-			var err error
 			tempFile, err = os.Create(tempFilePath)
 			if err == nil {
 				for _, chunk := range chunks {

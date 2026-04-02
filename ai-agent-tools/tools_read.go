@@ -21,7 +21,19 @@ type ReadToolInput struct {
 
 // ReadToolDetails 读取工具的详细信息
 type ReadToolDetails struct {
+	Path string `json:"path"`
+	StartLine int `json:"startLine"`
+	EndLine int `json:"endLine"`
 	Truncation *TruncationResult `json:"truncation,omitempty"`
+}
+
+func NewReadToolDetails(path string, startLine, endLine int, truncation *TruncationResult) *ReadToolDetails {
+	return &ReadToolDetails{
+		Path: path,
+		StartLine: startLine,
+		EndLine:   endLine,
+		Truncation: truncation,
+	}
 }
 
 // ReadOperations 读取工具的操作接口
@@ -206,6 +218,7 @@ func (t *ReadTool) readText(path string, offset, limit int) (*agent.AgentToolRes
 	allLines := strings.Split(textContent, "\n")
 	totalFileLines := len(allLines)
 	startLine := 0
+	endLine := totalFileLines
 	if offset > 0 {
 		startLine = offset - 1
 	}
@@ -215,7 +228,7 @@ func (t *ReadTool) readText(path string, offset, limit int) (*agent.AgentToolRes
 	var selectedContent string
 	var userLimitedLines int
 	if limit > 0 {
-		endLine := startLine + limit
+		endLine = startLine + limit
 		if endLine > totalFileLines {
 			endLine = totalFileLines
 		}
@@ -230,8 +243,8 @@ func (t *ReadTool) readText(path string, offset, limit int) (*agent.AgentToolRes
 	if truncation.FirstLineExceeds {
 		firstLineSize := utils.FormatSize(len(allLines[startLine]))
 		outputText = fmt.Sprintf("[Line %d is %s, exceeds %s limit. Use bash: sed -n '%dp' %s | head -c %d]",
-			startLine+1, firstLineSize, utils.FormatSize(DEFAULT_MAX_BYTES), path, DEFAULT_MAX_BYTES)
-		details = &ReadToolDetails{Truncation: &truncation}
+			startLine+1, firstLineSize, utils.FormatSize(DEFAULT_MAX_BYTES), userLimitedLines, path, DEFAULT_MAX_BYTES)
+		details = NewReadToolDetails(path, startLine, endLine, &truncation)
 	} else if truncation.Truncated {
 		endLineDisplay := startLine + truncation.OutputLines
 		nextOffset := endLineDisplay + 1
@@ -243,7 +256,7 @@ func (t *ReadTool) readText(path string, offset, limit int) (*agent.AgentToolRes
 			outputText += fmt.Sprintf("\n\n[Showing lines %d-%d of %d (%s limit). Use offset=%d to continue.]",
 				startLine+1, endLineDisplay, totalFileLines, utils.FormatSize(DEFAULT_MAX_BYTES), nextOffset)
 		}
-		details = &ReadToolDetails{Truncation: &truncation}
+		details = NewReadToolDetails(path, startLine, endLine, &truncation)
 	} else if userLimitedLines > 0 && startLine+userLimitedLines < totalFileLines {
 		remaining := totalFileLines - (startLine + userLimitedLines)
 		nextOffset := startLine + userLimitedLines + 1
