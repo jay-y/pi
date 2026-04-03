@@ -26,6 +26,10 @@ type LsToolDetails struct {
 	EntryLimitReached int               `json:"entryLimitReached,omitempty"`
 }
 
+func (l *LsToolDetails) GetSummary() string {
+	return l.Summary
+}
+
 func NewLsToolDetails(path string, entryCount int, truncation *TruncationResult, entryLimitReached int) *LsToolDetails {
 	return &LsToolDetails{
 		Summary:           fmt.Sprintf("in %s (%d entries)", path, entryCount),
@@ -183,9 +187,10 @@ func (t *LsTool) Execute(ctx context.Context, params map[string]any, onUpdate fu
 	}
 
 	if len(results) == 0 {
-		return &agent.AgentToolResult{
-			Content: []ai.ContentBlock{ai.NewTextContentBlock("(empty directory)")},
-		}, nil
+		return agent.NewAgentToolResult(
+			[]ai.ContentBlock{ai.NewTextContentBlock("(empty directory)")},
+			nil,
+		), nil
 	}
 
 	rawOutput := strings.Join(results, "\n")
@@ -206,8 +211,8 @@ func (t *LsTool) Execute(ctx context.Context, params map[string]any, onUpdate fu
 		output += "\n\n[" + strings.Join(notices, ". ") + "]"
 	}
 
-	return &agent.AgentToolResult{
-		Content: []ai.ContentBlock{ai.NewTextContentBlock(output)},
-		Details: NewLsToolDetails(dirPath, len(results), &truncation, limit),
-	}, nil
+	return agent.NewAgentToolResult(
+		[]ai.ContentBlock{ai.NewTextContentBlock(output)},
+		NewLsToolDetails(dirPath, len(results), &truncation, limit),
+	), nil
 }

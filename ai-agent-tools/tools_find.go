@@ -25,6 +25,10 @@ type FindToolDetails struct {
 	// ResultLimitReached int             `json:"resultLimitReached,omitempty"`
 }
 
+func (f *FindToolDetails) GetSummary() string {
+	return f.Summary
+}
+
 func NewFindToolDetails(path string, resultCount int, truncation *TruncationResult) *FindToolDetails {
 	return &FindToolDetails{
 		Summary:          fmt.Sprintf("in %s (%d results)", path, resultCount),
@@ -146,10 +150,10 @@ func (t *FindTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	if err != nil && output == "" {
 		resultText += fmt.Sprintf("\n\n[Error: %v]", err)
 	}
-	return &agent.AgentToolResult{
-		Content: []ai.ContentBlock{
+	return agent.NewAgentToolResult(
+		[]ai.ContentBlock{
 			ai.NewTextContentBlock(resultText),
 		},
-		Details: NewFindToolDetails(path, resultCount, &truncation),
-	}, nil
+		NewFindToolDetails(path, resultCount, &truncation),
+	), nil
 }

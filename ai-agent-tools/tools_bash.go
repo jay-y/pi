@@ -29,6 +29,10 @@ type BashToolDetails struct {
 	FullOutputPath string            `json:"fullOutputPath,omitempty"`
 }
 
+func (b *BashToolDetails) GetSummary() string {
+	return b.Summary
+}
+
 func NewBashToolDetails(command string, truncation *TruncationResult, fullOutputPath string) *BashToolDetails {
 	return &BashToolDetails{
 		Summary:        fmt.Sprintf("%s", command),
@@ -205,13 +209,14 @@ func (t *BashTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 			fullBuffer := bytes.Join(chunks, []byte{})
 			fullText := string(fullBuffer)
 			truncation := TruncateTail(fullText)
-			onUpdate(&agent.AgentToolResult{
-				Content: []ai.ContentBlock{ai.NewTextContentBlock(truncation.Content)},
-				Details: &BashToolDetails{
-					Truncation:     &truncation,
-					FullOutputPath: tempFilePath,
-				},
-			})
+			onUpdate(agent.NewAgentToolResult(
+				[]ai.ContentBlock{ai.NewTextContentBlock(truncation.Content)},
+				NewBashToolDetails(
+					command,
+					&truncation,
+					tempFilePath,
+				),
+			))
 		}
 	}
 	execCtx := ctx
@@ -266,8 +271,8 @@ func (t *BashTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	if result.ExitCode != nil && *result.ExitCode != 0 {
 		return nil, fmt.Errorf("%s\n\nCommand exited with code %d", outputText, *result.ExitCode)
 	}
-	return &agent.AgentToolResult{
-		Content: []ai.ContentBlock{ai.NewTextContentBlock(outputText)},
-		Details: NewBashToolDetails(command, &truncation, tempFilePath),
-	}, nil
+	return agent.NewAgentToolResult(
+		[]ai.ContentBlock{ai.NewTextContentBlock(outputText)},
+		NewBashToolDetails(command, &truncation, tempFilePath),
+	), nil
 }

@@ -24,6 +24,10 @@ type EditToolDetails struct {
 	FirstChangedLine int    `json:"firstChangedLine,omitempty"`
 }
 
+func (e *EditToolDetails) GetSummary() string {
+	return e.Summary
+}
+
 func NewEditToolDetails(path string, diff string, firstChangedLine int, chars int) *EditToolDetails {
 	return &EditToolDetails{
 		Summary: fmt.Sprintf("in %s (%d chars)", path, chars),
@@ -175,10 +179,10 @@ func (t *EditTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 		return nil, err
 	}
 	diffResult := generateDiffString(baseContent, newContent)
-	return &agent.AgentToolResult{
-		Content: []ai.ContentBlock{
+	return agent.NewAgentToolResult(
+		[]ai.ContentBlock{
 			ai.NewTextContentBlock(fmt.Sprintf("Successfully replaced text in %s.", path)),
 		},
-		Details: NewEditToolDetails(path, diffResult.Diff, diffResult.FirstChangedLine, diffResult.Chars),
-	}, nil
+		NewEditToolDetails(path, diffResult.Diff, diffResult.FirstChangedLine, diffResult.Chars),
+	), nil
 }

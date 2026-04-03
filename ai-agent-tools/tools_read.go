@@ -25,6 +25,10 @@ type ReadToolDetails struct {
 	Truncation *TruncationResult `json:"truncation,omitempty"`
 }
 
+func (r *ReadToolDetails) GetSummary() string {
+	return r.Summary
+}
+
 func NewReadToolDetails(path string, startLine, endLine int, truncation *TruncationResult) *ReadToolDetails {
 	return &ReadToolDetails{
 		Summary:    fmt.Sprintf("lines %d-%d from %s", startLine, endLine, path),
@@ -201,7 +205,7 @@ func (t *ReadTool) readImage(path, mimeType string) (*agent.AgentToolResult, err
 		ai.NewTextContentBlock(fmt.Sprintf("Read image file [%s]", mimeType)),
 		ai.NewImageContentBlock(base64, mimeType),
 	}
-	return &agent.AgentToolResult{Content: content}, nil
+	return agent.NewAgentToolResult(content, nil), nil
 }
 
 // readText 读取文本文件
@@ -261,8 +265,8 @@ func (t *ReadTool) readText(path string, offset, limit int) (*agent.AgentToolRes
 	} else {
 		outputText = truncation.Content
 	}
-	return &agent.AgentToolResult{
-		Content: []ai.ContentBlock{ai.NewTextContentBlock(outputText)},
-		Details: details,
-	}, nil
+	return agent.NewAgentToolResult(
+		[]ai.ContentBlock{ai.NewTextContentBlock(outputText)},
+		details,
+	), nil
 }

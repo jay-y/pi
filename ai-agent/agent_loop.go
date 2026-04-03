@@ -393,7 +393,7 @@ func executeToolCalls(
 		if tool == nil {
 			result = AgentToolResult{
 				Content: []ai.ContentBlock{ai.NewTextContentBlock(fmt.Sprintf("Tool %s not found", toolCall.Name))},
-				Details: map[string]any{},
+				Details: nil,
 			}
 			isError = true
 		} else {
@@ -401,7 +401,7 @@ func executeToolCalls(
 			if err != nil {
 				result = AgentToolResult{
 					Content: []ai.ContentBlock{ai.NewTextContentBlock(err.Error())},
-					Details: map[string]any{},
+					Details: nil,
 				}
 				isError = true
 			} else {
@@ -416,7 +416,7 @@ func executeToolCalls(
 				if err != nil {
 					result = AgentToolResult{
 						Content: []ai.ContentBlock{ai.NewTextContentBlock(err.Error())},
-						Details: map[string]any{},
+						Details: nil,
 					}
 					isError = true
 				} else {
@@ -469,7 +469,7 @@ func executeToolCalls(
 func skipToolCall(toolCall *ai.ToolCallContentBlock, stream *AgentEventStream) *ai.ToolResultMessage {
 	result := NewAgentToolResult(
 		[]ai.ContentBlock{ai.NewTextContentBlock("Skipped due to queued user message.")},
-		map[string]any{},
+		nil,
 	)
 
 	stream.Push(NewAgentEventToolExecutionStart(

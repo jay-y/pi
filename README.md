@@ -753,9 +753,10 @@ func (t *MyTool) GetParameters() map[string]any {
 }
 func (t *MyTool) Execute(ctx context.Context, params map[string]any, onUpdate func(*agent.AgentToolResult)) (*agent.AgentToolResult, error) {
     // 实现工具逻辑
-    return &agent.AgentToolResult{
-        Content: []ai.ContentBlock{ai.NewTextContentBlock("Result")},
-    }, nil
+    return agent.NewAgentToolResult(
+        []ai.ContentBlock{ai.NewTextContentBlock("Result")},
+        nil,
+    ), nil
 }
 ```
 

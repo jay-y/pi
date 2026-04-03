@@ -34,6 +34,10 @@ type GrepToolDetails struct {
 	LinesTruncated    bool              `json:"linesTruncated,omitempty"`
 }
 
+func (g *GrepToolDetails) GetSummary() string {
+	return g.Summary
+}
+
 func NewGrepToolDetails(path string, resultCount int, truncation *TruncationResult, matchLimitReached int, linesTruncated bool) *GrepToolDetails {
 	return &GrepToolDetails{
 		Summary:           fmt.Sprintf("in %s (%d results)", path, resultCount),
@@ -247,9 +251,10 @@ func (t *GrepTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	cmd.Wait()
 
 	if len(matches) == 0 {
-		return &agent.AgentToolResult{
-			Content: []ai.ContentBlock{ai.NewTextContentBlock("No matches found")},
-		}, nil
+		return agent.NewAgentToolResult(
+			[]ai.ContentBlock{ai.NewTextContentBlock("No matches found")},
+			nil,
+		), nil
 	}
 
 	fileCache := make(map[string][]string)
@@ -341,8 +346,8 @@ func (t *GrepTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 		output += "\n\n[" + strings.Join(notices, ". ") + "]"
 	}
 
-	return &agent.AgentToolResult{
-		Content: []ai.ContentBlock{ai.NewTextContentBlock(output)},
-		Details: NewGrepToolDetails(searchDir, len(matches), &truncation, limit, linesTruncated),
-	}, nil
+	return agent.NewAgentToolResult(
+		[]ai.ContentBlock{ai.NewTextContentBlock(output)},
+		NewGrepToolDetails(searchDir, len(matches), &truncation, limit, linesTruncated),
+	), nil
 }

@@ -15,13 +15,17 @@ type AgentToolConfig interface {
 	Execute(ctx context.Context, params map[string]any, onUpdate func(partialResult *AgentToolResult)) (*AgentToolResult, error)
 }
 
+type AgentToolResultDetails interface {
+	GetSummary() string
+}
+
 // AgentToolResult 工具执行结果
 type AgentToolResult struct {
 	Content []ai.ContentBlock `json:"content"`
-	Details any           `json:"details"`
+	Details AgentToolResultDetails `json:"details"`
 }
 
-func NewAgentToolResult(content []ai.ContentBlock, details any) *AgentToolResult {
+func NewAgentToolResult(content []ai.ContentBlock, details AgentToolResultDetails) *AgentToolResult {
 	return &AgentToolResult{
 		Content: content,
 		Details: details,

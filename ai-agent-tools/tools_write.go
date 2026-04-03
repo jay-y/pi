@@ -21,6 +21,10 @@ type WriteToolDetails struct {
 	Summary string `json:"summary,omitempty"`
 }
 
+func (w *WriteToolDetails) GetSummary() string {
+	return w.Summary
+}
+
 func NewWriteToolDetails(path string) *WriteToolDetails {
 	return &WriteToolDetails{
 		Summary: fmt.Sprintf("with %s", path),
@@ -119,10 +123,10 @@ func (t *WriteTool) Execute(ctx context.Context, params map[string]any, onUpdate
 		return nil, fmt.Errorf("cannot write file: %w", err)
 	}
 
-	return &agent.AgentToolResult{
-		Content: []ai.ContentBlock{
+	return agent.NewAgentToolResult(
+		[]ai.ContentBlock{
 			ai.NewTextContentBlock(fmt.Sprintf("Successfully wrote %d bytes to %s", len(content), path)),
 		},
-		Details: NewWriteToolDetails(path),
-	}, nil
+		NewWriteToolDetails(path),
+	), nil
 }
