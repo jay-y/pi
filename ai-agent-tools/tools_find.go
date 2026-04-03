@@ -20,8 +20,17 @@ type FindToolInput struct {
 
 // FindToolDetails Find 工具详细信息
 type FindToolDetails struct {
+	Summary           string           `json:"summary,omitempty"`
 	Truncation       *TruncationResult `json:"truncation,omitempty"`
-	ResultLimitReached int             `json:"resultLimitReached,omitempty"`
+	// ResultLimitReached int             `json:"resultLimitReached,omitempty"`
+}
+
+func NewFindToolDetails(path string, resultCount int, truncation *TruncationResult) *FindToolDetails {
+	return &FindToolDetails{
+		Summary:          fmt.Sprintf("in %s (%d results)", path, resultCount),
+		Truncation:       truncation,
+		// ResultLimitReached: resultLimitReached,
+	}
 }
 
 // FindOperations find 工具的操作接口
@@ -118,7 +127,11 @@ func (t *FindTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 
 	// 执行 find
 	output, err := t.operations.Exec(path, input.Name, typeFilter)
-
+	resultCount := 0
+	if err == nil {
+		resultCount = len(strings.Split(output, "\n"))
+	}
+	
 	// 处理输出
 	truncation := TruncateHead(output)
 
@@ -137,6 +150,6 @@ func (t *FindTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 		Content: []ai.ContentBlock{
 			ai.NewTextContentBlock(resultText),
 		},
-		Details: nil,
+		Details: NewFindToolDetails(path, resultCount, &truncation),
 	}, nil
 }

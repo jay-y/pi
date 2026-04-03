@@ -15,110 +15,6 @@ import (
 	"github.com/jay-y/pi/utils"
 )
 
-// GrepToolInput grep 工具的输入参数
-// type GrepToolInput struct {
-// 	Pattern string `json:"pattern"`
-// 	Path    string `json:"path"`
-// }
-
-// // GrepOperations grep 工具的操作接口
-// type GrepOperations interface {
-// 	ExecuteGrep(pattern, path string) (string, error)
-// }
-
-// // DefaultGrepOperations 默认的 grep 操作
-// type DefaultGrepOperations struct{}
-
-// // ExecuteGrep 执行 grep 命令
-// func (d *DefaultGrepOperations) ExecuteGrep(pattern, path string) (string, error) {
-// 	cmd := exec.Command("grep", "-r", pattern, path)
-// 	output, err := cmd.CombinedOutput()
-// 	return string(output), err
-// }
-
-// // GrepToolOptions grep 工具的选项
-// type GrepToolOptions struct {
-// 	Operations GrepOperations
-// }
-
-// // CreateGrepTool 创建 grep 工具
-// func CreateGrepTool(cwd string, options *GrepToolOptions) AgentTool {
-// 	if options == nil {
-// 		options = &GrepToolOptions{
-// 			Operations: &DefaultGrepOperations{},
-// 		}
-// 	}
-// 	if options.Operations == nil {
-// 		options.Operations = &DefaultGrepOperations{}
-// 	}
-
-// 	return AgentTool{
-// 		Name:        "grep",
-// 		Label:       "grep",
-// 		Description: "Search for a pattern in files. Output is truncated to 1000 lines or 30KB.",
-// 		Parameters: map[string]any{
-// 			"type": "object",
-// 			"properties": map[string]any{
-// 				"pattern": map[string]any{
-// 					"type":        "string",
-// 					"description": "Pattern to search for",
-// 				},
-// 				"path": map[string]any{
-// 					"type":        "string",
-// 					"description": "Path to search (default: current directory)",
-// 				},
-// 			},
-// 			"required": []string{"pattern"},
-// 		},
-// 		Execute: func(ctx context.Context, params any, onUpdate AgentToolUpdateCallback) (AgentToolResult, error) {
-// 			input, ok := params.(map[string]any)
-// 			if !ok {
-// 				return AgentToolResult{}, fmt.Errorf("invalid params type")
-// 			}
-
-// 			pattern, ok := input["pattern"].(string)
-// 			if !ok {
-// 				return AgentToolResult{}, fmt.Errorf("pattern parameter is required")
-// 			}
-
-// 			path := cwd
-// 			if p, ok := input["path"].(string); ok && p != "" {
-// 				if !strings.HasPrefix(p, "/") {
-// 					path = strings.Join([]string{cwd, p}, "/")
-// 				} else {
-// 					path = p
-// 				}
-// 			}
-
-// 			// 执行 grep
-// 			output, err := options.Operations.ExecuteGrep(pattern, path)
-
-// 			// 处理输出
-// 			truncation, truncatedOutput := truncateContent(output, 1000, 30*1024)
-
-// 			// 添加命令信息
-// 			resultText := fmt.Sprintf("$ grep -r '%s' %s\n\n%s", pattern, path, truncatedOutput)
-
-// 			// 添加截断信息
-// 			if truncation != nil && truncation.Truncated {
-// 				resultText += "\n\n[Output truncated. Use grep options to limit output.]"
-// 			}
-
-// 			// 处理错误
-// 			if err != nil && output == "" {
-// 				resultText += fmt.Sprintf("\n\n[Error: %v]", err)
-// 			}
-
-// 			return AgentToolResult{
-// 				Content: []ContentBlock{
-// 					ai.NewTextContentBlock(resultText),
-// 				},
-// 				Details: nil,
-// 			}, nil
-// 		},
-// 	}
-// }
-
 // GrepToolInput Grep 工具输入
 type GrepToolInput struct {
 	Pattern    string `json:"pattern"`
@@ -132,9 +28,19 @@ type GrepToolInput struct {
 
 // GrepToolDetails Grep 工具详细信息
 type GrepToolDetails struct {
+	Summary           string            `json:"summary,omitempty"`
 	Truncation        *TruncationResult `json:"truncation,omitempty"`
 	MatchLimitReached int               `json:"matchLimitReached,omitempty"`
 	LinesTruncated    bool              `json:"linesTruncated,omitempty"`
+}
+
+func NewGrepToolDetails(path string, resultCount int, truncation *TruncationResult, matchLimitReached int, linesTruncated bool) *GrepToolDetails {
+	return &GrepToolDetails{
+		Summary:           fmt.Sprintf("in %s (%d results)", path, resultCount),
+		Truncation:        truncation,
+		MatchLimitReached: matchLimitReached,
+		LinesTruncated:    linesTruncated,
+	}
 }
 
 // GrepOperations Grep 操作接口
@@ -417,22 +323,18 @@ func (t *GrepTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	truncation := TruncateHead(rawOutput)
 
 	output := truncation.Content
-	details := &GrepToolDetails{}
 	notices := []string{}
 
 	if len(matches) >= limit {
 		notices = append(notices, fmt.Sprintf("%d matches limit reached. Use limit=%d for more, or refine pattern", limit, limit*2))
-		details.MatchLimitReached = limit
 	}
 
 	if truncation.Truncated {
 		notices = append(notices, fmt.Sprintf("%s limit reached", utils.FormatSize(DEFAULT_MAX_BYTES)))
-		details.Truncation = &truncation
 	}
 
 	if linesTruncated {
 		notices = append(notices, fmt.Sprintf("Some lines truncated to %d chars. Use read tool to see full lines", GREP_MAX_LINE_LENGTH))
-		details.LinesTruncated = true
 	}
 
 	if len(notices) > 0 {
@@ -441,6 +343,6 @@ func (t *GrepTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 
 	return &agent.AgentToolResult{
 		Content: []ai.ContentBlock{ai.NewTextContentBlock(output)},
-		Details: details,
+		Details: NewGrepToolDetails(searchDir, len(matches), &truncation, limit, linesTruncated),
 	}, nil
 }

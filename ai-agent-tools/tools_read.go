@@ -21,17 +21,13 @@ type ReadToolInput struct {
 
 // ReadToolDetails 读取工具的详细信息
 type ReadToolDetails struct {
-	Path string `json:"path"`
-	StartLine int `json:"startLine"`
-	EndLine int `json:"endLine"`
+	Summary    string            `json:"summary,omitempty"`
 	Truncation *TruncationResult `json:"truncation,omitempty"`
 }
 
 func NewReadToolDetails(path string, startLine, endLine int, truncation *TruncationResult) *ReadToolDetails {
 	return &ReadToolDetails{
-		Path: path,
-		StartLine: startLine,
-		EndLine:   endLine,
+		Summary:    fmt.Sprintf("lines %d-%d from %s", startLine, endLine, path),
 		Truncation: truncation,
 	}
 }

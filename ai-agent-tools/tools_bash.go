@@ -24,8 +24,17 @@ type BashToolInput struct {
 
 // BashToolDetails Bash 工具详细信息
 type BashToolDetails struct {
+	Summary        string `json:"summary,omitempty"`
 	Truncation     *TruncationResult `json:"truncation,omitempty"`
 	FullOutputPath string            `json:"fullOutputPath,omitempty"`
+}
+
+func NewBashToolDetails(command string, truncation *TruncationResult, fullOutputPath string) *BashToolDetails {
+	return &BashToolDetails{
+		Summary:        fmt.Sprintf("%s", command),
+		Truncation:     truncation,
+		FullOutputPath: fullOutputPath,
+	}
 }
 
 // BashOperations Bash 操作接口
@@ -230,12 +239,7 @@ func (t *BashTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	} else {
 		outputText = truncation.Content
 	}
-	var details *BashToolDetails
 	if truncation.Truncated {
-		details = &BashToolDetails{
-			Truncation:     &truncation,
-			FullOutputPath: tempFilePath,
-		}
 		startLine := truncation.TotalLines - truncation.OutputLines + 1
 		endLine := truncation.TotalLines
 		if truncation.LastLinePartial {
@@ -264,6 +268,6 @@ func (t *BashTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 	}
 	return &agent.AgentToolResult{
 		Content: []ai.ContentBlock{ai.NewTextContentBlock(outputText)},
-		Details: details,
+		Details: NewBashToolDetails(command, &truncation, tempFilePath),
 	}, nil
 }

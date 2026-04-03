@@ -21,8 +21,17 @@ type LsToolInput struct {
 
 // LsToolDetails Ls 工具详细信息
 type LsToolDetails struct {
+	Summary           string            `json:"summary,omitempty"`
 	Truncation        *TruncationResult `json:"truncation,omitempty"`
 	EntryLimitReached int               `json:"entryLimitReached,omitempty"`
+}
+
+func NewLsToolDetails(path string, entryCount int, truncation *TruncationResult, entryLimitReached int) *LsToolDetails {
+	return &LsToolDetails{
+		Summary:           fmt.Sprintf("in %s (%d entries)", path, entryCount),
+		Truncation:        truncation,
+		EntryLimitReached: entryLimitReached,
+	}
 }
 
 // LsOperations Ls 操作接口
@@ -183,17 +192,14 @@ func (t *LsTool) Execute(ctx context.Context, params map[string]any, onUpdate fu
 	truncation := TruncateHead(rawOutput)
 
 	output := truncation.Content
-	details := &LsToolDetails{}
 	notices := []string{}
 
 	if entryLimitReached {
 		notices = append(notices, fmt.Sprintf("%d entries limit reached. Use limit=%d for more", limit, limit*2))
-		details.EntryLimitReached = limit
 	}
 
 	if truncation.Truncated {
 		notices = append(notices, fmt.Sprintf("%s limit reached", utils.FormatSize(DEFAULT_MAX_BYTES)))
-		details.Truncation = &truncation
 	}
 
 	if len(notices) > 0 {
@@ -202,6 +208,6 @@ func (t *LsTool) Execute(ctx context.Context, params map[string]any, onUpdate fu
 
 	return &agent.AgentToolResult{
 		Content: []ai.ContentBlock{ai.NewTextContentBlock(output)},
-		Details: details,
+		Details: NewLsToolDetails(dirPath, len(results), &truncation, limit),
 	}, nil
 }

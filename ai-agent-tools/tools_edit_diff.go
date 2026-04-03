@@ -126,6 +126,7 @@ type DiffPart struct {
 type DiffResult struct {
 	Diff             string
 	FirstChangedLine int
+	Chars            int
 }
 
 // generateDiffString 生成差异字符串
@@ -150,6 +151,7 @@ func generateDiffString(oldContent string, newContent string, contextLines ...in
 	newLineNum := 1
 	lastWasChange := false
 	var firstChangedLine *int
+	charsChanged := 0
 
 	for i := 0; i < len(parts); i++ {
 		part := parts[i]
@@ -164,6 +166,7 @@ func generateDiffString(oldContent string, newContent string, contextLines ...in
 			}
 
 			for _, line := range raw {
+				charsChanged += len(line) + 1 // +1 for newline
 				if part.Added {
 					lineNum := fmt.Sprintf("%*d", lineNumWidth, newLineNum)
 					output = append(output, fmt.Sprintf("+%s %s", lineNum, line))
@@ -221,7 +224,8 @@ func generateDiffString(oldContent string, newContent string, contextLines ...in
 	}
 
 	result := DiffResult{
-		Diff: strings.Join(output, "\n"),
+		Diff:  strings.Join(output, "\n"),
+		Chars: charsChanged,
 	}
 	if firstChangedLine != nil {
 		result.FirstChangedLine = *firstChangedLine

@@ -19,14 +19,14 @@ type EditToolInput struct {
 
 // EditToolDetails Edit 工具详细信息
 type EditToolDetails struct {
-	Path 		     string `json:"path"`
+	Summary          string            `json:"summary,omitempty"`
 	Diff             string `json:"diff"`
 	FirstChangedLine int    `json:"firstChangedLine,omitempty"`
 }
 
-func NewEditToolDetails(path string, diff string, firstChangedLine int) *EditToolDetails {
+func NewEditToolDetails(path string, diff string, firstChangedLine int, chars int) *EditToolDetails {
 	return &EditToolDetails{
-		Path: path,
+		Summary: fmt.Sprintf("in %s (%d chars)", path, chars),
 		Diff: diff,
 		FirstChangedLine: firstChangedLine,
 	}
@@ -179,6 +179,6 @@ func (t *EditTool) Execute(ctx context.Context, params map[string]any, onUpdate 
 		Content: []ai.ContentBlock{
 			ai.NewTextContentBlock(fmt.Sprintf("Successfully replaced text in %s.", path)),
 		},
-		Details: NewEditToolDetails(path, diffResult.Diff, diffResult.FirstChangedLine),
+		Details: NewEditToolDetails(path, diffResult.Diff, diffResult.FirstChangedLine, diffResult.Chars),
 	}, nil
 }

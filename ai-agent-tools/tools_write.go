@@ -16,6 +16,17 @@ type WriteToolInput struct {
 	Content string `json:"content"`
 }
 
+// WriteToolDetails Write 工具详细信息
+type WriteToolDetails struct {
+	Summary string `json:"summary,omitempty"`
+}
+
+func NewWriteToolDetails(path string) *WriteToolDetails {
+	return &WriteToolDetails{
+		Summary: fmt.Sprintf("with %s", path),
+	}
+}
+
 // WriteOperations Write 操作接口
 type WriteOperations interface {
 	WriteFile(path string, content string) error
@@ -112,5 +123,6 @@ func (t *WriteTool) Execute(ctx context.Context, params map[string]any, onUpdate
 		Content: []ai.ContentBlock{
 			ai.NewTextContentBlock(fmt.Sprintf("Successfully wrote %d bytes to %s", len(content), path)),
 		},
+		Details: NewWriteToolDetails(path),
 	}, nil
 }
