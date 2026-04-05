@@ -176,8 +176,9 @@ func (p *OpenAICompletionsProvider) buildRequest(
 	if err != nil {
 		return nil, fmt.Errorf("marshal params: %w", err)
 	}
+	bodyStr := string(body)
 
-	req, err := http.NewRequest("POST", model.GetBaseURL()+"/chat/completions", strings.NewReader(string(body)))
+	req, err := http.NewRequest("POST", model.GetBaseURL()+"/chat/completions", strings.NewReader(bodyStr))
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +261,7 @@ func (p *OpenAICompletionsProvider) buildParams(
 	opts *StreamOptions,
 ) map[string]any {
 	params := map[string]any{
-		"model":    model.GetID(),
+		"model":    model.GetName(),
 		"stream":   true,
 		"messages": p.convertMessages(model, ctx),
 		"stream_options": map[string]any{
@@ -479,10 +480,13 @@ func (p *OpenAICompletionsProvider) convertAssistantMessage(msg *AssistantMessag
 			normalizedID := p.normalizeToolCallID(b.ID)
 
 			// 将 Arguments 转换为 JSON 字符串
-			var argsJSON string
+			argsJSON := "{}"
 			if b.Arguments != nil {
 				if bytes, err := json.Marshal(b.Arguments); err == nil {
 					argsJSON = string(bytes)
+				}
+				if argsJSON == "null" {
+					argsJSON = "{}"
 				}
 			}
 
@@ -571,6 +575,7 @@ func (p *OpenAICompletionsProvider) processStream(
 
 	var currentBlock ContentBlock
 	var blocks []ContentBlock
+	toolCallArgumentsJSON := ""
 
 	// 发送开始事件
 	// stream.Push(&AssistantMessageEventStart{
@@ -716,9 +721,12 @@ func (p *OpenAICompletionsProvider) processStream(
 					tc.Name = tCall.Function.Name
 				}
 				if tCall.Function.Arguments != "" {
-					tc.Arguments = p.parseStreamingJSON(tCall.Function.Arguments)
+					toolCallArgumentsJSON += tCall.Function.Arguments
 				}
-
+				if strings.HasPrefix(toolCallArgumentsJSON, "{") && strings.HasSuffix(toolCallArgumentsJSON, "}") {
+					tc.Arguments = p.parseStreamingJSON(toolCallArgumentsJSON)
+					currentBlock = tc
+				}
 				stream.Push(NewAssistantMessageEventToolCallDelta(
 					len(blocks)-1,
 					tCall.Function.Arguments,
@@ -784,7 +792,14 @@ func (p *OpenAICompletionsProvider) mapStopReason(reason string) StopReason {
 // parseStreamingJSON 解析流式 JSON
 func (p *OpenAICompletionsProvider) parseStreamingJSON(data string) map[string]any {
 	var result map[string]any
-	json.Unmarshal([]byte(data), &result)
+	err := json.Unmarshal([]byte(data), &result)
+	if err != nil {
+		return nil
+	}
+	// 确保返回的是一个非空对象
+	if result == nil {
+		return nil
+	}
 	return result
 }
 

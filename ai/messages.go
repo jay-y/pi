@@ -86,7 +86,7 @@ func NewToolCallContentBlock(id, name string, arguments map[string]any) *ToolCal
 		Type:      ContentBlockTypeToolCall,
 		ID:        id,
 		Name:      name,
-		Arguments: &arguments,
+		Arguments: arguments,
 	}
 }
 
